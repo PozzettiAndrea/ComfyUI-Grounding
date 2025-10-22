@@ -1,5 +1,6 @@
 """
-Main node implementations for ComfyUI-Grounding
+ComfyUI-Grounding: Unified object detection nodes for ComfyUI
+Simplified architecture with just 3 nodes for all grounding models
 """
 
 import torch
@@ -14,469 +15,284 @@ import torchvision.transforms as T
 # Global model cache for keeping models in memory
 MODEL_CACHE = {}
 
-# Model registry for GroundingDINO variants
-GROUNDING_DINO_MODELS = {
-    # Original GroundingDINO models
-    "GroundingDINO_SwinT_OGC (694MB)": {
-        "config": "GroundingDINO_SwinT_OGC.cfg.py",
-        "checkpoint": "groundingdino_swint_ogc.pth",
-        "url": "https://huggingface.co/ShilongLiu/GroundingDINO/resolve/main/groundingdino_swint_ogc.pth",
-        "type": "local",
+# Unified model registry with prefixed names for easy identification
+MODEL_REGISTRY = {
+    # GroundingDINO models
+    "GroundingDINO: SwinT OGC (694MB)": {
+        "type": "grounding_dino",
+        "hf_id": "IDEA-Research/grounding-dino-tiny",
+        "framework": "transformers",
     },
-    "GroundingDINO_SwinB (938MB)": {
-        "config": "GroundingDINO_SwinB.cfg.py",
-        "checkpoint": "groundingdino_swinb_cogcoor.pth",
-        "url": "https://huggingface.co/ShilongLiu/GroundingDINO/resolve/main/groundingdino_swinb_cogcoor.pth",
-        "type": "local",
+    "GroundingDINO: SwinB (938MB)": {
+        "type": "grounding_dino",
+        "hf_id": "IDEA-Research/grounding-dino-base",
+        "framework": "transformers",
     },
-    # MM-GroundingDINO Tiny models (Swin-T backbone) - 0.2B parameters
-    "MM-GroundingDINO-Tiny (O365+GoldG, 50.4 mAP)": {
+    # MM-GroundingDINO Tiny models
+    "MM-GroundingDINO: Tiny O365+GoldG (50.4 mAP)": {
+        "type": "grounding_dino",
         "hf_id": "openmmlab-community/mm_grounding_dino_tiny_o365v1_goldg",
-        "type": "transformers",
+        "framework": "transformers",
     },
-    "MM-GroundingDINO-Tiny (O365+GoldG+GRIT, 50.5 mAP)": {
+    "MM-GroundingDINO: Tiny O365+GoldG+GRIT (50.5 mAP)": {
+        "type": "grounding_dino",
         "hf_id": "openmmlab-community/mm_grounding_dino_tiny_o365v1_goldg_grit",
-        "type": "transformers",
+        "framework": "transformers",
     },
-    "MM-GroundingDINO-Tiny (O365+GoldG+V3Det, 50.6 mAP)": {
+    "MM-GroundingDINO: Tiny O365+GoldG+V3Det (50.6 mAP)": {
+        "type": "grounding_dino",
         "hf_id": "openmmlab-community/mm_grounding_dino_tiny_o365v1_goldg_v3det",
-        "type": "transformers",
+        "framework": "transformers",
     },
-    "MM-GroundingDINO-Tiny (O365+GoldG+GRIT+V3Det, 50.4 mAP)": {
-        "hf_id": "openmmlab-community/mm_grounding_dino_tiny_o365v1_goldg_grit_v3det",
-        "type": "transformers",
-    },
-    # MM-GroundingDINO Base models (Swin-B backbone) - 0.2B parameters
-    "MM-GroundingDINO-Base (O365+GoldG+V3Det, 52.5 mAP)": {
+    # MM-GroundingDINO Base models
+    "MM-GroundingDINO: Base O365+GoldG+V3Det (52.5 mAP)": {
+        "type": "grounding_dino",
         "hf_id": "openmmlab-community/mm_grounding_dino_base_o365v1_goldg_v3det",
-        "type": "transformers",
+        "framework": "transformers",
     },
-    "MM-GroundingDINO-Base (All datasets, 59.5 mAP)": {
+    "MM-GroundingDINO: Base All Datasets (59.5 mAP)": {
+        "type": "grounding_dino",
         "hf_id": "openmmlab-community/mm_grounding_dino_base_all",
-        "type": "transformers",
+        "framework": "transformers",
     },
-    # MM-GroundingDINO Large models (Swin-L backbone) - 0.3B parameters
-    "MM-GroundingDINO-Large (O365v2+OIv6+GoldG, 53.0 mAP)": {
+    # MM-GroundingDINO Large models
+    "MM-GroundingDINO: Large O365v2+OIv6+GoldG (53.0 mAP)": {
+        "type": "grounding_dino",
         "hf_id": "openmmlab-community/mm_grounding_dino_large_o365v2_oiv6_goldg",
-        "type": "transformers",
+        "framework": "transformers",
     },
-    "MM-GroundingDINO-Large (All datasets, 60.3 mAP)": {
+    "MM-GroundingDINO: Large All Datasets (60.3 mAP)": {
+        "type": "grounding_dino",
         "hf_id": "openmmlab-community/mm_grounding_dino_large_all",
-        "type": "transformers",
+        "framework": "transformers",
+    },
+    # OWLv2 models
+    "OWLv2: Base Patch16": {
+        "type": "owlv2",
+        "hf_id": "google/owlv2-base-patch16",
+        "framework": "transformers",
+    },
+    "OWLv2: Large Patch14": {
+        "type": "owlv2",
+        "hf_id": "google/owlv2-large-patch14",
+        "framework": "transformers",
+    },
+    "OWLv2: Base Patch16 Ensemble": {
+        "type": "owlv2",
+        "hf_id": "google/owlv2-base-patch16-ensemble",
+        "framework": "transformers",
+    },
+    "OWLv2: Large Patch14 Ensemble": {
+        "type": "owlv2",
+        "hf_id": "google/owlv2-large-patch14-ensemble",
+        "framework": "transformers",
+    },
+    # Florence-2 models
+    "Florence-2: Base (0.23B params)": {
+        "type": "florence2",
+        "hf_id": "microsoft/Florence-2-base",
+        "framework": "transformers",
+    },
+    "Florence-2: Large (0.77B params)": {
+        "type": "florence2",
+        "hf_id": "microsoft/Florence-2-large",
+        "framework": "transformers",
+    },
+    # YOLO-World models
+    "YOLO-World: v8s (Small)": {
+        "type": "yolo_world",
+        "url": "https://github.com/ultralytics/assets/releases/download/v8.3.0/yolov8s-worldv2.pt",
+        "framework": "ultralytics",
+    },
+    "YOLO-World: v8m (Medium)": {
+        "type": "yolo_world",
+        "url": "https://github.com/ultralytics/assets/releases/download/v8.3.0/yolov8m-worldv2.pt",
+        "framework": "ultralytics",
+    },
+    "YOLO-World: v8l (Large)": {
+        "type": "yolo_world",
+        "url": "https://github.com/ultralytics/assets/releases/download/v8.3.0/yolov8l-worldv2.pt",
+        "framework": "ultralytics",
+    },
+    "YOLO-World: v8x (Extra Large)": {
+        "type": "yolo_world",
+        "url": "https://github.com/ultralytics/assets/releases/download/v8.3.0/yolov8x-worldv2.pt",
+        "framework": "ultralytics",
     },
 }
 
-YOLO_WORLD_MODELS = {
-    "yolov8s-world": {
-        "url": "https://github.com/ultralytics/assets/releases/download/v8.2.0/yolov8s-world.pt",
-    },
-    "yolov8m-world": {
-        "url": "https://github.com/ultralytics/assets/releases/download/v8.2.0/yolov8m-world.pt",
-    },
-    "yolov8l-world": {
-        "url": "https://github.com/ultralytics/assets/releases/download/v8.2.0/yolov8l-world.pt",
-    },
-    "yolov8x-world": {
-        "url": "https://github.com/ultralytics/assets/releases/download/v8.2.0/yolov8x-world.pt",
-    },
-}
 
-
-class GroundingDINOModelLoader:
+class GroundingModelLoader:
     """
-    Loads GroundingDINO models for open-vocabulary object detection
+    Unified model loader for all grounding models
+    Supports: GroundingDINO, MM-GroundingDINO, OWLv2, Florence-2, YOLO-World
     """
 
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "model_name": (list(GROUNDING_DINO_MODELS.keys()), {"default": "GroundingDINO_SwinT_OGC (694MB)"}),
+                "model": (list(MODEL_REGISTRY.keys()), {
+                    "default": "Florence-2: Base (0.23B params)",
+                }),
                 "keep_in_memory": ("BOOLEAN", {"default": True}),
+            },
+            "optional": {
+                "florence2_attn": (["eager", "sdpa", "flash_attention_2"], {
+                    "default": "eager",
+                    "tooltip": "⚠️ FLORENCE-2 ONLY! Ignored for all other models. eager=most compatible, sdpa=PyTorch 2.0+, flash_attention_2=A100/H100"
+                }),
             }
         }
 
-    RETURN_TYPES = ("GROUNDING_DINO_MODEL",)
+    RETURN_TYPES = ("GROUNDING_MODEL",)
     RETURN_NAMES = ("model",)
     FUNCTION = "load_model"
     CATEGORY = "grounding"
 
-    def load_model(self, model_name: str, keep_in_memory: bool = True):
-        """Load GroundingDINO model with caching support"""
-
-        # Create cache key
-        cache_key = f"grounding_dino_{model_name}"
-
-        # Check cache if keep_in_memory is True
-        if keep_in_memory and cache_key in MODEL_CACHE:
-            print(f"Loading {model_name} from cache")
-            return (MODEL_CACHE[cache_key],)
-
-        # Clear from cache if keep_in_memory is False
-        if not keep_in_memory and cache_key in MODEL_CACHE:
-            print(f"Removing {model_name} from cache")
-            del MODEL_CACHE[cache_key]
+    def load_model(self, model: str, keep_in_memory: bool = True, florence2_attn: str = "eager"):
+        """Load any grounding model with unified interface"""
 
         # Get model config
-        model_config = GROUNDING_DINO_MODELS[model_name]
-        model_type = model_config.get("type", "local")
+        if model not in MODEL_REGISTRY:
+            raise ValueError(f"Unknown model: {model}")
 
-        # Load model based on type
-        if model_type == "local":
-            model = self._load_local(model_name, model_config)
-        else:  # transformers
-            model = self._load_with_transformers(model_name, model_config)
+        config = MODEL_REGISTRY[model]
+        model_type = config["type"]
+
+        # Create cache key
+        cache_key = f"{model_type}_{model}_{florence2_attn if model_type == 'florence2' else 'default'}"
+
+        # Check cache
+        if keep_in_memory and cache_key in MODEL_CACHE:
+            print(f"✅ Loading {model} from cache")
+            return (MODEL_CACHE[cache_key],)
+
+        # Clear cache if requested
+        if not keep_in_memory and cache_key in MODEL_CACHE:
+            print(f"🗑️ Removing {model} from cache")
+            del MODEL_CACHE[cache_key]
+
+        # Load model based on framework
+        if config["framework"] == "transformers":
+            loaded_model = self._load_transformers_model(model, config, florence2_attn)
+        elif config["framework"] == "ultralytics":
+            loaded_model = self._load_yolo_model(model, config)
+        else:
+            raise ValueError(f"Unknown framework: {config['framework']}")
 
         # Cache if requested
         if keep_in_memory:
-            MODEL_CACHE[cache_key] = model
-            print(f"Cached {model_name} in memory")
+            MODEL_CACHE[cache_key] = loaded_model
+            print(f"💾 Cached {model} in memory")
 
-        return (model,)
+        return (loaded_model,)
 
-    def _load_local(self, model_name: str, model_config: dict):
-        """Load GroundingDINO using local implementation"""
-        try:
-            # Try using the local implementation from comfyui-sam2
-            from custom_nodes.comfyui_sam2.node import load_groundingdino_model
-            model = load_groundingdino_model(model_name)
-            return model
-        except ImportError:
-            raise RuntimeError(
-                f"Local GroundingDINO implementation not found. "
-                f"Please install ComfyUI-segment-anything-2 to use {model_name}, "
-                f"or use MM-GroundingDINO models instead."
-            )
+    def _load_transformers_model(self, model_name: str, config: dict, florence2_attn: str):
+        """Load transformers-based models (GroundingDINO, OWLv2, Florence-2)"""
+        model_type = config["type"]
+        hf_id = config["hf_id"]
+        device = mm.get_torch_device()
 
-    def _load_with_transformers(self, model_name: str, model_config: dict):
-        """Load MM-GroundingDINO using HuggingFace transformers"""
-        try:
+        # Setup models directory
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        models_dir = os.path.join(script_dir, "models")
+        os.makedirs(models_dir, exist_ok=True)
+
+        print(f"📥 Loading {model_name} from HuggingFace ({hf_id})...")
+
+        if model_type in ["grounding_dino"]:
             from transformers import AutoProcessor, AutoModelForZeroShotObjectDetection
-
-            device = mm.get_torch_device()
-
-            # Save models to local Models folder in plugin directory
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            models_dir = os.path.join(script_dir, "Models")
-            os.makedirs(models_dir, exist_ok=True)
-
-            # Get HuggingFace model ID
-            hf_id = model_config.get("hf_id")
-
-            if not hf_id:
-                raise ValueError(f"No HuggingFace model ID found for {model_name}")
-
-            print(f"📥 Loading {model_name} from HuggingFace ({hf_id})...")
-            print("Downloading model files (progress bars will appear below):")
-
-            # Load processor and model (automatically shows tqdm progress bars)
             processor = AutoProcessor.from_pretrained(hf_id, cache_dir=models_dir)
             model = AutoModelForZeroShotObjectDetection.from_pretrained(hf_id, cache_dir=models_dir)
 
-            model.to(device)
-            model.eval()
+        elif model_type == "owlv2":
+            from transformers import Owlv2Processor, Owlv2ForObjectDetection
+            processor = Owlv2Processor.from_pretrained(hf_id, cache_dir=models_dir)
+            model = Owlv2ForObjectDetection.from_pretrained(hf_id, cache_dir=models_dir)
 
-            print(f"✅ Successfully loaded {model_name}")
+        elif model_type == "florence2":
+            from transformers import AutoProcessor, AutoModelForCausalLM
+            print(f"Using Florence-2 attention implementation: {florence2_attn}")
+            processor = AutoProcessor.from_pretrained(hf_id, cache_dir=models_dir, trust_remote_code=True)
+            model = AutoModelForCausalLM.from_pretrained(
+                hf_id,
+                cache_dir=models_dir,
+                trust_remote_code=True,
+                attn_implementation=florence2_attn
+            )
+        else:
+            raise ValueError(f"Unknown transformers model type: {model_type}")
 
-            return {"model": model, "processor": processor, "type": "transformers"}
-        except Exception as e:
-            raise RuntimeError(f"Failed to load GroundingDINO model: {e}")
+        model.to(device)
+        model.eval()
+
+        print(f"✅ Successfully loaded {model_name}")
+
+        return {
+            "model": model,
+            "processor": processor,
+            "type": model_type,
+            "framework": "transformers"
+        }
+
+    def _load_yolo_model(self, model_name: str, config: dict):
+        """Load YOLO-World models"""
+        try:
+            from ultralytics import YOLOWorld
+        except ImportError:
+            raise RuntimeError("ultralytics not installed. Run: pip install ultralytics")
+
+        # Setup models directory
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        models_dir = os.path.join(script_dir, "models")
+        os.makedirs(models_dir, exist_ok=True)
+
+        # Extract filename from URL
+        url = config["url"]
+        filename = url.split("/")[-1]
+        model_path = os.path.join(models_dir, filename)
+
+        # Download if needed
+        if not os.path.exists(model_path):
+            print(f"📥 Downloading {model_name}...")
+            from torch.hub import download_url_to_file
+            download_url_to_file(url, model_path, progress=True)
+            print(f"✅ Downloaded {model_name}")
+
+        # Load model
+        print(f"📂 Loading {model_name} from {model_path}")
+        model = YOLOWorld(model_path)
+
+        # Move to device
+        device = mm.get_torch_device()
+        model.to(device)
+
+        print(f"✅ Successfully loaded {model_name}")
+
+        return {
+            "model": model,
+            "type": "yolo_world",
+            "framework": "ultralytics"
+        }
 
 
-class GroundingDINODetector:
+class GroundingDetector:
     """
-    Performs object detection using GroundingDINO with text prompts
+    Unified detector for all grounding models
+    Auto-detects model type and uses appropriate detection method
     """
 
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "model": ("GROUNDING_DINO_MODEL",),
+                "model": ("GROUNDING_MODEL",),
                 "image": ("IMAGE",),
                 "prompt": ("STRING", {
                     "default": "person . car . dog .",
                     "multiline": True,
-                }),
-                "box_threshold": ("FLOAT", {
-                    "default": 0.3,
-                    "min": 0.0,
-                    "max": 1.0,
-                    "step": 0.01,
-                }),
-                "text_threshold": ("FLOAT", {
-                    "default": 0.25,
-                    "min": 0.0,
-                    "max": 1.0,
-                    "step": 0.01,
-                }),
-            },
-            "optional": {
-                "single_box_mode": ("BOOLEAN", {
-                    "default": False,
-                    "tooltip": "Return only the highest-scoring detection (REC mode for referring expressions)"
-                }),
-                "output_format": (["list_only", "dict_with_data"], {
-                    "default": "list_only",
-                    "tooltip": "list_only: SAM2-compatible list of lists | dict_with_data: dict with boxes/labels/scores"
-                }),
-            }
-        }
-
-    RETURN_TYPES = ("BBOX", "IMAGE", "STRING")
-    RETURN_NAMES = ("bboxes", "annotated_image", "labels")
-    FUNCTION = "detect"
-    CATEGORY = "grounding"
-
-    def detect(self, model, image, prompt: str, box_threshold: float, text_threshold: float, single_box_mode: bool = False, output_format: str = "list_only"):
-        """Run detection on image with text prompt"""
-
-        # Process all images in batch
-        batch_size = image.shape[0]
-        all_boxes = []
-        all_labels = []
-        all_scores = []
-        annotated_images = []
-
-        for i in range(batch_size):
-            # Convert ComfyUI image format (B, H, W, C) in [0, 1] to PIL
-            image_np = (image[i].cpu().numpy() * 255).astype(np.uint8)
-            pil_image = Image.fromarray(image_np)
-
-            # Check model type and run detection
-            if isinstance(model, dict) and model.get("type") == "transformers":
-                bboxes, annotated_tensor, _ = self._detect_transformers(model, pil_image, prompt, box_threshold, text_threshold, single_box_mode)
-            else:
-                bboxes, annotated_tensor, _ = self._detect_local(model, pil_image, prompt, box_threshold, single_box_mode)
-
-            # Accumulate results
-            all_boxes.append(bboxes["boxes"])
-            all_labels.append(bboxes["labels"])
-            all_scores.append(bboxes["scores"])
-            annotated_images.append(annotated_tensor)
-
-        # Combine annotated images
-        annotated_batch = torch.cat(annotated_images, dim=0)
-
-        # Format batched output based on output_format
-        if output_format == "list_only":
-            # SAM2-compatible format: list of lists (boxes only)
-            batched_bboxes = all_boxes
-        else:  # dict_with_data
-            # Dict format with all information
-            batched_bboxes = {
-                "boxes": all_boxes,
-                "labels": all_labels,
-                "scores": all_scores,
-            }
-
-        # Format labels string (from first image)
-        if len(all_labels) > 0 and len(all_labels[0]) > 0:
-            labels_str = ", ".join([f"{label} ({score:.2f})" for label, score in zip(all_labels[0], all_scores[0])])
-        else:
-            labels_str = ""
-
-        return (batched_bboxes, annotated_batch, labels_str)
-
-    def _detect_transformers(self, model_dict, pil_image, prompt, box_threshold, text_threshold, single_box_mode=False):
-        """Detection using transformers implementation"""
-        model = model_dict["model"]
-        processor = model_dict["processor"]
-        device = mm.get_torch_device()
-
-        # Prepare inputs
-        inputs = processor(images=pil_image, text=prompt, return_tensors="pt").to(device)
-
-        # Run inference
-        with torch.no_grad():
-            outputs = model(**inputs)
-
-        # Post-process (use 'threshold' instead of 'box_threshold' for GroundingDINO)
-        results = processor.post_process_grounded_object_detection(
-            outputs,
-            inputs.input_ids,
-            threshold=box_threshold,
-            text_threshold=text_threshold,
-            target_sizes=[pil_image.size[::-1]]
-        )[0]
-
-        # Extract boxes and labels
-        boxes = results["boxes"].cpu().numpy()
-        labels = results["labels"]
-        scores = results["scores"].cpu().numpy()
-
-        # Override labels if prompt has no separators
-        # Check for periods and commas (common separators in GroundingDINO prompts)
-        if '.' not in prompt and ',' not in prompt:
-            # Use full prompt as label for all detections
-            clean_prompt = prompt.strip()
-            labels = [clean_prompt] * len(labels)
-
-        # Single box mode: return only highest-scoring detection (REC mode)
-        if single_box_mode and len(boxes) > 0:
-            top_idx = scores.argmax()
-            boxes = boxes[top_idx:top_idx+1]
-            labels = [labels[top_idx]]
-            scores = scores[top_idx:top_idx+1]
-
-        # Format output
-        bboxes = {
-            "boxes": boxes,
-            "labels": labels,
-            "scores": scores,
-        }
-
-        # Create annotated image
-        annotated = self._draw_boxes(pil_image, boxes, labels, scores)
-        annotated_tensor = torch.from_numpy(np.array(annotated).astype(np.float32) / 255.0).unsqueeze(0)
-
-        # Format labels string
-        labels_str = ", ".join([f"{label} ({score:.2f})" for label, score in zip(labels, scores)])
-
-        return (bboxes, annotated_tensor, labels_str)
-
-    def _detect_local(self, model, pil_image, prompt, box_threshold, single_box_mode=False):
-        """Detection using local GroundingDINO implementation"""
-        # Use the implementation from comfyui-sam2
-        from custom_nodes.comfyui_sam2.node import groundingdino_predict
-
-        boxes = groundingdino_predict(model, pil_image, prompt, box_threshold)
-
-        # Convert to numpy
-        boxes_np = boxes.cpu().numpy()
-
-        # Create labels (simplified - just use prompt)
-        labels = [prompt.strip().rstrip('.')] * len(boxes_np)
-        scores = np.ones(len(boxes_np)) * box_threshold  # Approximate
-
-        # Single box mode: return only first detection (local impl doesn't provide scores)
-        if single_box_mode and len(boxes_np) > 0:
-            boxes_np = boxes_np[0:1]
-            labels = [labels[0]]
-            scores = scores[0:1]
-
-        bboxes = {
-            "boxes": boxes_np,
-            "labels": labels,
-            "scores": scores,
-        }
-
-        # Create annotated image
-        annotated = self._draw_boxes(pil_image, boxes_np, labels, scores)
-        annotated_tensor = torch.from_numpy(np.array(annotated).astype(np.float32) / 255.0).unsqueeze(0)
-
-        labels_str = ", ".join(labels)
-
-        return (bboxes, annotated_tensor, labels_str)
-
-    def _draw_boxes(self, image, boxes, labels, scores):
-        """Draw bounding boxes on image"""
-        from PIL import ImageDraw, ImageFont
-
-        draw = ImageDraw.Draw(image)
-
-        for box, label, score in zip(boxes, labels, scores):
-            # box format: [x1, y1, x2, y2]
-            x1, y1, x2, y2 = box
-
-            # Draw rectangle
-            draw.rectangle([x1, y1, x2, y2], outline="red", width=3)
-
-            # Draw label
-            text = f"{label}: {score:.2f}"
-            draw.text((x1, y1 - 10), text, fill="red")
-
-        return image
-
-
-class YOLOWorldModelLoader:
-    """
-    Loads YOLO-World models for open-vocabulary object detection
-    """
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "model_name": (list(YOLO_WORLD_MODELS.keys()), {"default": "yolov8s-world"}),
-                "keep_in_memory": ("BOOLEAN", {"default": True}),
-            }
-        }
-
-    RETURN_TYPES = ("YOLO_WORLD_MODEL",)
-    RETURN_NAMES = ("model",)
-    FUNCTION = "load_model"
-    CATEGORY = "grounding"
-
-    def load_model(self, model_name: str, keep_in_memory: bool = True):
-        """Load YOLO-World model with caching support"""
-
-        # Create cache key
-        cache_key = f"yolo_world_{model_name}"
-
-        # Check cache if keep_in_memory is True
-        if keep_in_memory and cache_key in MODEL_CACHE:
-            print(f"Loading {model_name} from cache")
-            return (MODEL_CACHE[cache_key],)
-
-        # Clear from cache if keep_in_memory is False
-        if not keep_in_memory and cache_key in MODEL_CACHE:
-            print(f"Removing {model_name} from cache")
-            del MODEL_CACHE[cache_key]
-
-        try:
-            from ultralytics import YOLOWorld
-
-            # Save models to local Models folder in plugin directory
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            models_dir = os.path.join(script_dir, "Models")
-            os.makedirs(models_dir, exist_ok=True)
-
-            model_filename = f"{model_name}.pt"
-            model_path = os.path.join(models_dir, model_filename)
-
-            # Download if needed
-            if not os.path.exists(model_path):
-                print(f"📥 Downloading {model_name} to {models_dir}...")
-                print("Progress bar:")
-                from torch.hub import download_url_to_file
-                download_url_to_file(
-                    YOLO_WORLD_MODELS[model_name]["url"],
-                    model_path,
-                    progress=True  # Explicitly enable progress bar
-                )
-                print(f"✅ Downloaded {model_name} successfully")
-
-            # Load model
-            print(f"Loading {model_name} from {model_path}")
-            model = YOLOWorld(model_path)
-
-            # Cache if requested
-            if keep_in_memory:
-                MODEL_CACHE[cache_key] = model
-                print(f"Cached {model_name} in memory")
-
-            return (model,)
-        except ImportError:
-            raise RuntimeError("ultralytics not installed. Run: pip install ultralytics")
-        except Exception as e:
-            raise RuntimeError(f"Failed to load YOLO-World model: {e}")
-
-
-class YOLOWorldDetector:
-    """
-    Performs object detection using YOLO-World with text prompts
-    """
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "model": ("YOLO_WORLD_MODEL",),
-                "image": ("IMAGE",),
-                "classes": ("STRING", {
-                    "default": "person, car, dog",
-                    "multiline": True,
+                    "tooltip": "Use periods (.) for GroundingDINO/OWLv2/Florence-2, commas (,) for YOLO-World"
                 }),
                 "confidence_threshold": ("FLOAT", {
                     "default": 0.3,
@@ -486,45 +302,294 @@ class YOLOWorldDetector:
                 }),
             },
             "optional": {
+                "text_threshold": ("FLOAT", {
+                    "default": 0.25,
+                    "min": 0.0,
+                    "max": 1.0,
+                    "step": 0.01,
+                    "tooltip": "⚠️ Only used for GroundingDINO models"
+                }),
                 "single_box_mode": ("BOOLEAN", {
                     "default": False,
-                    "tooltip": "Return only the highest-scoring detection (REC mode for referring expressions)"
+                    "tooltip": "Return only highest-scoring detection (for referring expressions)"
                 }),
-                "output_format": (["list_only", "dict_with_data"], {
+                "bbox_output_format": (["list_only", "dict_with_data"], {
                     "default": "list_only",
-                    "tooltip": "list_only: SAM2-compatible list of lists | dict_with_data: dict with boxes/labels/scores"
+                    "tooltip": "list_only: SAM2-compatible | dict_with_data: includes labels/scores"
+                }),
+                "output_masks": ("BOOLEAN", {
+                    "default": False,
+                    "tooltip": "Convert bounding boxes to binary masks"
                 }),
             }
         }
 
-    RETURN_TYPES = ("BBOX", "IMAGE", "STRING")
-    RETURN_NAMES = ("bboxes", "annotated_image", "labels")
+    RETURN_TYPES = ("BBOX", "IMAGE", "STRING", "MASK")
+    RETURN_NAMES = ("bboxes", "annotated_image", "labels", "masks")
     FUNCTION = "detect"
     CATEGORY = "grounding"
 
-    def detect(self, model, image, classes: str, confidence_threshold: float, single_box_mode: bool = False, output_format: str = "list_only"):
-        """Run detection with YOLO-World"""
+    def detect(self, model, image, prompt: str, confidence_threshold: float,
+               text_threshold: float = 0.25, single_box_mode: bool = False,
+               bbox_output_format: str = "list_only", output_masks: bool = False):
+        """Universal detection that works with any model"""
 
-        # Process all images in batch
+        model_type = model["type"]
+
+        # Route to appropriate detection method
+        if model_type == "grounding_dino":
+            return self._detect_grounding_dino(model, image, prompt, confidence_threshold,
+                                              text_threshold, single_box_mode, bbox_output_format, output_masks)
+        elif model_type == "owlv2":
+            return self._detect_owlv2(model, image, prompt, confidence_threshold,
+                                     single_box_mode, bbox_output_format, output_masks)
+        elif model_type == "florence2":
+            return self._detect_florence2(model, image, prompt, confidence_threshold,
+                                         single_box_mode, bbox_output_format, output_masks)
+        elif model_type == "yolo_world":
+            return self._detect_yolo_world(model, image, prompt, confidence_threshold,
+                                          single_box_mode, bbox_output_format, output_masks)
+        else:
+            raise ValueError(f"Unknown model type: {model_type}")
+
+    def _detect_grounding_dino(self, model_dict, image, prompt, box_threshold, text_threshold,
+                              single_box_mode, bbox_output_format, output_masks):
+        """Detection using GroundingDINO/MM-GroundingDINO"""
+        model = model_dict["model"]
+        processor = model_dict["processor"]
+        device = mm.get_torch_device()
+
         batch_size = image.shape[0]
         all_boxes = []
         all_labels = []
         all_scores = []
         annotated_images = []
 
-        # Parse classes - check if we should use full text as label
+        for i in range(batch_size):
+            # Convert to PIL
+            image_np = (image[i].cpu().numpy() * 255).astype(np.uint8)
+            pil_image = Image.fromarray(image_np)
+
+            # Prepare inputs
+            inputs = processor(images=pil_image, text=prompt, return_tensors="pt").to(device)
+
+            # Run inference
+            with torch.no_grad():
+                outputs = model(**inputs)
+
+            # Post-process
+            results = processor.post_process_grounded_object_detection(
+                outputs,
+                inputs.input_ids,
+                threshold=box_threshold,
+                text_threshold=text_threshold,
+                target_sizes=[pil_image.size[::-1]]
+            )[0]
+
+            # Extract results
+            boxes = results["boxes"].cpu().numpy()
+            labels = results["labels"]
+            scores = results["scores"].cpu().numpy()
+
+            # Override labels if no separators (REC mode)
+            if '.' not in prompt and ',' not in prompt:
+                labels = [prompt.strip()] * len(labels)
+
+            # Single box mode
+            if single_box_mode and len(boxes) > 0:
+                top_idx = scores.argmax()
+                boxes = boxes[top_idx:top_idx+1]
+                labels = [labels[top_idx]]
+                scores = scores[top_idx:top_idx+1]
+
+            # Draw boxes
+            annotated = self._draw_boxes(pil_image, boxes, labels, scores)
+            annotated_tensor = torch.from_numpy(np.array(annotated).astype(np.float32) / 255.0).unsqueeze(0)
+
+            all_boxes.append(boxes)
+            all_labels.append(labels)
+            all_scores.append(scores)
+            annotated_images.append(annotated_tensor)
+
+        return self._format_output(all_boxes, all_labels, all_scores, annotated_images,
+                                   image.shape, bbox_output_format, output_masks)
+
+    def _detect_owlv2(self, model_dict, image, prompt, box_threshold,
+                     single_box_mode, bbox_output_format, output_masks):
+        """Detection using OWLv2"""
+        model = model_dict["model"]
+        processor = model_dict["processor"]
+        device = mm.get_torch_device()
+
+        batch_size = image.shape[0]
+        all_boxes = []
+        all_labels = []
+        all_scores = []
+        annotated_images = []
+
+        for i in range(batch_size):
+            # Convert to PIL
+            image_np = (image[i].cpu().numpy() * 255).astype(np.uint8)
+            pil_image = Image.fromarray(image_np)
+
+            # Parse text queries
+            has_separator = '.' in prompt
+            if has_separator:
+                text_queries = [[c.strip() for c in prompt.split(".") if c.strip()]]
+            else:
+                text_queries = [[prompt.strip()]]
+
+            # Prepare inputs
+            inputs = processor(images=pil_image, text=text_queries, return_tensors="pt").to(device)
+
+            # Run inference
+            with torch.no_grad():
+                outputs = model(**inputs)
+
+            # Post-process
+            target_sizes = torch.tensor([pil_image.size[::-1]]).to(device)
+            results = processor.post_process_object_detection(
+                outputs=outputs,
+                threshold=box_threshold,
+                target_sizes=target_sizes
+            )[0]
+
+            # Extract results
+            boxes = results["boxes"].cpu().numpy()
+            labels_indices = results["labels"].cpu().numpy()
+            scores = results["scores"].cpu().numpy()
+
+            # Map labels
+            labels = [text_queries[0][idx] for idx in labels_indices]
+
+            # Override labels if no separator
+            if not has_separator and len(labels) > 0:
+                labels = [prompt.strip()] * len(labels)
+
+            # Single box mode
+            if single_box_mode and len(boxes) > 0:
+                top_idx = scores.argmax()
+                boxes = boxes[top_idx:top_idx+1]
+                labels = [labels[top_idx]]
+                scores = scores[top_idx:top_idx+1]
+
+            # Draw boxes
+            annotated = self._draw_boxes(pil_image, boxes, labels, scores)
+            annotated_tensor = torch.from_numpy(np.array(annotated).astype(np.float32) / 255.0).unsqueeze(0)
+
+            all_boxes.append(boxes)
+            all_labels.append(labels)
+            all_scores.append(scores)
+            annotated_images.append(annotated_tensor)
+
+        return self._format_output(all_boxes, all_labels, all_scores, annotated_images,
+                                   image.shape, bbox_output_format, output_masks)
+
+    def _detect_florence2(self, model_dict, image, prompt, box_threshold,
+                         single_box_mode, bbox_output_format, output_masks):
+        """Detection using Florence-2"""
+        model = model_dict["model"]
+        processor = model_dict["processor"]
+        device = mm.get_torch_device()
+
+        batch_size = image.shape[0]
+        all_boxes = []
+        all_labels = []
+        all_scores = []
+        annotated_images = []
+
+        for i in range(batch_size):
+            # Convert to PIL
+            image_np = (image[i].cpu().numpy() * 255).astype(np.uint8)
+            pil_image = Image.fromarray(image_np)
+
+            # Parse text queries
+            has_separator = '.' in prompt
+            if has_separator:
+                text_queries = [c.strip() for c in prompt.split(".") if c.strip()]
+                caption = " ".join(text_queries)
+            else:
+                caption = prompt.strip()
+                text_queries = [caption]
+
+            # Prepare task and inputs
+            task_prompt = "<CAPTION_TO_PHRASE_GROUNDING>"
+            inputs = processor(text=task_prompt + caption, images=pil_image, return_tensors="pt").to(device)
+
+            # Run inference
+            with torch.no_grad():
+                generated_ids = model.generate(
+                    input_ids=inputs["input_ids"],
+                    pixel_values=inputs["pixel_values"],
+                    max_new_tokens=1024,
+                    num_beams=3,
+                    use_cache=False,  # Prevent past_key_values issues
+                )
+
+            # Decode and parse
+            generated_text = processor.batch_decode(generated_ids, skip_special_tokens=False)[0]
+            parsed_answer = processor.post_process_generation(generated_text, task=task_prompt, image_size=pil_image.size)
+
+            # Extract bboxes (already in pixel coordinates!)
+            result = parsed_answer.get(task_prompt, {})
+            boxes = np.array(result.get("bboxes", []))
+            labels_from_model = result.get("labels", [])
+
+            # Assign labels
+            if len(labels_from_model) == len(boxes) and all(labels_from_model):
+                labels = labels_from_model
+            else:
+                labels = text_queries * (len(boxes) // max(len(text_queries), 1) + 1)
+                labels = labels[:len(boxes)]
+
+            # Create dummy scores
+            scores = np.ones(len(boxes)) * 0.9
+
+            # Override labels if no separator
+            if not has_separator and len(labels) > 0:
+                labels = [prompt.strip()] * len(labels)
+
+            # Single box mode
+            if single_box_mode and len(boxes) > 0:
+                boxes = boxes[0:1]
+                labels = [labels[0]]
+                scores = scores[0:1]
+
+            # Draw boxes
+            annotated = self._draw_boxes(pil_image, boxes, labels, scores)
+            annotated_tensor = torch.from_numpy(np.array(annotated).astype(np.float32) / 255.0).unsqueeze(0)
+
+            all_boxes.append(boxes)
+            all_labels.append(labels)
+            all_scores.append(scores)
+            annotated_images.append(annotated_tensor)
+
+        return self._format_output(all_boxes, all_labels, all_scores, annotated_images,
+                                   image.shape, bbox_output_format, output_masks)
+
+    def _detect_yolo_world(self, model_dict, image, classes, confidence_threshold,
+                          single_box_mode, bbox_output_format, output_masks):
+        """Detection using YOLO-World"""
+        model = model_dict["model"]
+
+        batch_size = image.shape[0]
+        all_boxes = []
+        all_labels = []
+        all_scores = []
+        annotated_images = []
+
+        # Parse classes
         has_separator = ',' in classes
         if has_separator:
             class_list = [c.strip() for c in classes.split(",")]
         else:
-            # No comma separator - treat as single class/referring expression
             class_list = [classes.strip()]
 
-        # Set classes for the model
+        # Set classes for model
         model.set_classes(class_list)
 
         for i in range(batch_size):
-            # Convert ComfyUI image format
+            # Convert to numpy
             image_np = (image[i].cpu().numpy() * 255).astype(np.uint8)
 
             # Run inference
@@ -539,37 +604,56 @@ class YOLOWorldDetector:
             # Map class IDs to names
             labels = [class_list[cid] for cid in class_ids]
 
-            # Override labels if no separator (referring expression mode)
+            # Override labels if no separator
             if not has_separator and len(labels) > 0:
-                # Use full prompt as label for all detections
                 labels = [classes.strip()] * len(labels)
 
-            # Single box mode: return only highest-scoring detection (REC mode)
+            # Single box mode
             if single_box_mode and len(boxes) > 0:
                 top_idx = scores.argmax()
                 boxes = boxes[top_idx:top_idx+1]
                 labels = [labels[top_idx]]
                 scores = scores[top_idx:top_idx+1]
 
-            # Get annotated image
-            annotated_np = result.plot()
-            annotated_tensor = torch.from_numpy(annotated_np.astype(np.float32) / 255.0).unsqueeze(0)
+            # Draw boxes
+            pil_image = Image.fromarray(image_np)
+            annotated = self._draw_boxes(pil_image, boxes, labels, scores)
+            annotated_tensor = torch.from_numpy(np.array(annotated).astype(np.float32) / 255.0).unsqueeze(0)
 
-            # Accumulate results
             all_boxes.append(boxes)
             all_labels.append(labels)
             all_scores.append(scores)
             annotated_images.append(annotated_tensor)
 
+        return self._format_output(all_boxes, all_labels, all_scores, annotated_images,
+                                   image.shape, bbox_output_format, output_masks)
+
+    def _draw_boxes(self, image, boxes, labels, scores):
+        """Draw bounding boxes on image"""
+        from PIL import ImageDraw
+
+        image = image.copy()
+        draw = ImageDraw.Draw(image)
+
+        for box, label, score in zip(boxes, labels, scores):
+            x1, y1, x2, y2 = box
+            draw.rectangle([x1, y1, x2, y2], outline="red", width=5)
+            text = f"{label}: {score:.2f}"
+            draw.text((x1, max(y1 - 15, 0)), text, fill="red")
+
+        return image
+
+    def _format_output(self, all_boxes, all_labels, all_scores, annotated_images,
+                       image_shape, bbox_output_format, output_masks):
+        """Format detection output and optionally create masks"""
+
         # Combine annotated images
         annotated_batch = torch.cat(annotated_images, dim=0)
 
-        # Format batched output based on output_format
-        if output_format == "list_only":
-            # SAM2-compatible format: list of lists (boxes only)
+        # Format bboxes based on bbox_output_format
+        if bbox_output_format == "list_only":
             batched_bboxes = all_boxes
         else:  # dict_with_data
-            # Dict format with all information
             batched_bboxes = {
                 "boxes": all_boxes,
                 "labels": all_labels,
@@ -582,7 +666,67 @@ class YOLOWorldDetector:
         else:
             labels_str = ""
 
-        return (batched_bboxes, annotated_batch, labels_str)
+        # Create masks if requested
+        if output_masks:
+            masks = self._boxes_to_masks(all_boxes, image_shape)
+        else:
+            # Return empty mask
+            batch_size, height, width, _ = image_shape
+            masks = torch.zeros((1, height, width))
+
+        return (batched_bboxes, annotated_batch, labels_str, masks)
+
+    def _boxes_to_masks(self, all_boxes, image_shape):
+        """Convert bounding boxes to binary masks
+
+        Creates one mask per bounding box across all images in batch.
+        Returns tensor of shape (N, H, W) where N is total number of boxes.
+        """
+        batch_size, height, width, _ = image_shape
+        all_masks = []
+
+        print(f"[Mask Creation] Image shape: {image_shape}")
+        print(f"[Mask Creation] Number of images in batch: {len(all_boxes)}")
+
+        for img_idx, boxes in enumerate(all_boxes):
+            print(f"[Mask Creation] Image {img_idx}: {len(boxes)} boxes")
+
+            # Create individual masks for each box in this image
+            for box_idx, box in enumerate(boxes):
+                mask = np.zeros((height, width), dtype=np.float32)
+                x1, y1, x2, y2 = box.astype(int)
+
+                print(f"  Box {box_idx}: [{x1}, {y1}, {x2}, {y2}]")
+
+                # Clamp to image boundaries
+                x1, y1 = max(0, x1), max(0, y1)
+                x2, y2 = min(width, x2), min(height, y2)
+
+                print(f"  Clamped: [{x1}, {y1}, {x2}, {y2}]")
+
+                # Check if box is valid
+                if x2 > x1 and y2 > y1:
+                    # Fill the box region with 1.0
+                    mask[y1:y2, x1:x2] = 1.0
+                    filled_pixels = (y2 - y1) * (x2 - x1)
+                    print(f"  Filled {filled_pixels} pixels")
+                else:
+                    print(f"  WARNING: Invalid box dimensions!")
+
+                all_masks.append(mask)
+
+        # If no boxes detected, return single empty mask
+        if len(all_masks) == 0:
+            print("[Mask Creation] No boxes detected, returning empty mask")
+            return torch.zeros((1, height, width))
+
+        # Stack all masks
+        masks_tensor = torch.from_numpy(np.stack(all_masks))
+        print(f"[Mask Creation] Final masks shape: {masks_tensor.shape}")
+        print(f"[Mask Creation] Masks min/max values: {masks_tensor.min()}/{masks_tensor.max()}")
+        print(f"[Mask Creation] Non-zero pixels: {(masks_tensor > 0).sum().item()}")
+
+        return masks_tensor
 
 
 class BboxVisualizer:
@@ -608,328 +752,56 @@ class BboxVisualizer:
     CATEGORY = "grounding"
 
     def visualize(self, image, bboxes, line_width=3):
-        """Draw bounding boxes on image"""
+        """Draw bounding boxes on image (supports batches)"""
         from PIL import ImageDraw
 
-        # Convert to PIL
-        image_np = (image[0].cpu().numpy() * 255).astype(np.uint8)
-        pil_image = Image.fromarray(image_np)
+        batch_size = image.shape[0]
+        annotated_images = []
 
-        draw = ImageDraw.Draw(pil_image)
+        for batch_idx in range(batch_size):
+            # Convert to PIL
+            image_np = (image[batch_idx].cpu().numpy() * 255).astype(np.uint8)
+            pil_image = Image.fromarray(image_np)
 
-        boxes = bboxes["boxes"]
-        labels = bboxes.get("labels", [])
-        scores = bboxes.get("scores", [])
+            draw = ImageDraw.Draw(pil_image)
 
-        for i, box in enumerate(boxes):
-            x1, y1, x2, y2 = box
-            draw.rectangle([x1, y1, x2, y2], outline="red", width=line_width)
-
-            if i < len(labels):
-                label = labels[i]
-                score = scores[i] if i < len(scores) else 0.0
-                text = f"{label}: {score:.2f}"
-                draw.text((x1, y1 - 10), text, fill="red")
-
-        # Convert back to tensor
-        annotated_np = np.array(pil_image).astype(np.float32) / 255.0
-        annotated_tensor = torch.from_numpy(annotated_np).unsqueeze(0)
-
-        return (annotated_tensor,)
-
-
-class BboxToMask:
-    """
-    Converts bounding boxes to masks
-    """
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "image": ("IMAGE",),
-                "bboxes": ("BBOX",),
-            },
-            "optional": {
-                "combine_masks": ("BOOLEAN", {"default": False}),
-            }
-        }
-
-    RETURN_TYPES = ("MASK",)
-    RETURN_NAMES = ("masks",)
-    FUNCTION = "bbox_to_mask"
-    CATEGORY = "grounding"
-
-    def bbox_to_mask(self, image, bboxes, combine_masks=False):
-        """Convert bounding boxes to binary masks"""
-
-        # Get image dimensions
-        batch_size, height, width, channels = image.shape
-        boxes = bboxes["boxes"]
-
-        if combine_masks:
-            # Single combined mask
-            mask = np.zeros((height, width), dtype=np.float32)
-            for box in boxes:
-                x1, y1, x2, y2 = box.astype(int)
-                x1, y1 = max(0, x1), max(0, y1)
-                x2, y2 = min(width, x2), min(height, y2)
-                mask[y1:y2, x1:x2] = 1.0
-
-            mask_tensor = torch.from_numpy(mask).unsqueeze(0)
-        else:
-            # Individual masks for each box
-            masks = []
-            for box in boxes:
-                mask = np.zeros((height, width), dtype=np.float32)
-                x1, y1, x2, y2 = box.astype(int)
-                x1, y1 = max(0, x1), max(0, y1)
-                x2, y2 = min(width, x2), min(height, y2)
-                mask[y1:y2, x1:x2] = 1.0
-                masks.append(mask)
-
-            if len(masks) == 0:
-                # No detections - return empty mask
-                mask_tensor = torch.zeros((1, height, width))
+            # Handle both output formats
+            if isinstance(bboxes, dict):
+                # dict_with_data format
+                boxes = bboxes["boxes"][batch_idx] if batch_idx < len(bboxes["boxes"]) else []
+                labels = bboxes.get("labels", [[]])[batch_idx] if "labels" in bboxes and batch_idx < len(bboxes["labels"]) else []
+                scores = bboxes.get("scores", [[]])[batch_idx] if "scores" in bboxes and batch_idx < len(bboxes["scores"]) else []
+            elif isinstance(bboxes, list):
+                # list_only format
+                boxes = bboxes[batch_idx] if batch_idx < len(bboxes) else []
+                labels = []
+                scores = []
             else:
-                mask_tensor = torch.from_numpy(np.stack(masks))
+                # Fallback
+                boxes = bboxes
+                labels = []
+                scores = []
 
-        return (mask_tensor,)
+            # Draw boxes
+            for i, box in enumerate(boxes):
+                x1, y1, x2, y2 = box
+                draw.rectangle([x1, y1, x2, y2], outline="red", width=line_width)
 
+                if i < len(labels) and i < len(scores):
+                    label = labels[i]
+                    score = scores[i]
+                    text = f"{label}: {score:.2f}"
+                    draw.text((x1, max(y1 - 10, 0)), text, fill="red")
 
-class UnifiedDetector:
-    """
-    Universal detector that works with both GroundingDINO and YOLO-World models
-    Automatically detects model type and uses appropriate inference method
-    """
+            # Convert back to tensor
+            annotated_np = np.array(pil_image).astype(np.float32) / 255.0
+            annotated_tensor = torch.from_numpy(annotated_np)
+            annotated_images.append(annotated_tensor)
 
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "model": ("GROUNDING_DINO_MODEL,YOLO_WORLD_MODEL",),
-                "image": ("IMAGE",),
-                "prompt": ("STRING", {
-                    "default": "person . car . dog .",
-                    "multiline": True,
-                    "tooltip": "For GroundingDINO: period-separated (e.g., 'cat . dog .'). For YOLO-World: comma-separated (e.g., 'cat, dog')"
-                }),
-                "threshold": ("FLOAT", {
-                    "default": 0.3,
-                    "min": 0.0,
-                    "max": 1.0,
-                    "step": 0.01,
-                }),
-            },
-            "optional": {
-                "text_threshold": ("FLOAT", {
-                    "default": 0.25,
-                    "min": 0.0,
-                    "max": 1.0,
-                    "step": 0.01,
-                    "tooltip": "Only used for GroundingDINO models"
-                }),
-                "single_box_mode": ("BOOLEAN", {
-                    "default": False,
-                    "tooltip": "Return only the highest-scoring detection (REC mode for referring expressions)"
-                }),
-            }
-        }
-
-    RETURN_TYPES = ("BBOX", "IMAGE", "STRING")
-    RETURN_NAMES = ("bboxes", "annotated_image", "labels")
-    FUNCTION = "detect"
-    CATEGORY = "grounding"
-
-    def detect(self, model, image, prompt: str, threshold: float, text_threshold: float = 0.25, single_box_mode: bool = False):
-        """Universal detection that auto-detects model type"""
-
-        # Detect model type
-        model_type = self._detect_model_type(model)
-
-        if model_type == "yolo_world":
-            return self._detect_yolo_world(model, image, prompt, threshold, single_box_mode)
-        else:  # grounding_dino or transformers
-            return self._detect_grounding_dino(model, image, prompt, threshold, text_threshold, single_box_mode)
-
-    def _detect_model_type(self, model):
-        """Detect whether this is a YOLO-World or GroundingDINO model"""
-        # Check for YOLO-World model
-        try:
-            from ultralytics import YOLOWorld
-            if isinstance(model, YOLOWorld):
-                return "yolo_world"
-        except ImportError:
-            pass
-
-        # Check for transformers-based model
-        if isinstance(model, dict) and model.get("type") == "transformers":
-            return "grounding_dino_transformers"
-
-        # Default to GroundingDINO (local)
-        return "grounding_dino_local"
-
-    def _detect_grounding_dino(self, model, image, prompt, box_threshold, text_threshold, single_box_mode=False):
-        """Detection using GroundingDINO"""
-        # Convert ComfyUI image format
-        image_np = (image[0].cpu().numpy() * 255).astype(np.uint8)
-        pil_image = Image.fromarray(image_np)
-
-        # Check model type
-        if isinstance(model, dict) and model.get("type") == "transformers":
-            return self._detect_transformers(model, pil_image, prompt, box_threshold, text_threshold, single_box_mode)
+        # Stack all annotated images into batch
+        if len(annotated_images) > 1:
+            result = torch.stack(annotated_images)
         else:
-            return self._detect_local(model, pil_image, prompt, box_threshold, single_box_mode)
+            result = annotated_images[0].unsqueeze(0)
 
-    def _detect_transformers(self, model_dict, pil_image, prompt, box_threshold, text_threshold, single_box_mode=False):
-        """Detection using transformers implementation"""
-        model = model_dict["model"]
-        processor = model_dict["processor"]
-        device = mm.get_torch_device()
-
-        # Prepare inputs
-        inputs = processor(images=pil_image, text=prompt, return_tensors="pt").to(device)
-
-        # Run inference
-        with torch.no_grad():
-            outputs = model(**inputs)
-
-        # Post-process (use 'threshold' instead of 'box_threshold' for GroundingDINO)
-        results = processor.post_process_grounded_object_detection(
-            outputs,
-            inputs.input_ids,
-            threshold=box_threshold,
-            text_threshold=text_threshold,
-            target_sizes=[pil_image.size[::-1]]
-        )[0]
-
-        # Extract boxes and labels
-        boxes = results["boxes"].cpu().numpy()
-        labels = results["labels"]
-        scores = results["scores"].cpu().numpy()
-
-        # Single box mode: return only highest-scoring detection (REC mode)
-        if single_box_mode and len(boxes) > 0:
-            top_idx = scores.argmax()
-            boxes = boxes[top_idx:top_idx+1]
-            labels = [labels[top_idx]]
-            scores = scores[top_idx:top_idx+1]
-
-        # Format output
-        bboxes = {
-            "boxes": boxes,
-            "labels": labels,
-            "scores": scores,
-        }
-
-        # Create annotated image
-        annotated = self._draw_boxes(pil_image, boxes, labels, scores)
-        annotated_tensor = torch.from_numpy(np.array(annotated).astype(np.float32) / 255.0).unsqueeze(0)
-
-        # Format labels string
-        labels_str = ", ".join([f"{label} ({score:.2f})" for label, score in zip(labels, scores)])
-
-        return (bboxes, annotated_tensor, labels_str)
-
-    def _detect_local(self, model, pil_image, prompt, box_threshold, single_box_mode=False):
-        """Detection using local GroundingDINO implementation"""
-        from custom_nodes.comfyui_sam2.node import groundingdino_predict
-
-        boxes = groundingdino_predict(model, pil_image, prompt, box_threshold)
-
-        # Convert to numpy
-        boxes_np = boxes.cpu().numpy()
-
-        # Create labels
-        labels = [prompt.strip().rstrip('.')] * len(boxes_np)
-        scores = np.ones(len(boxes_np)) * box_threshold
-
-        # Single box mode: return only first detection (local impl doesn't provide scores)
-        if single_box_mode and len(boxes_np) > 0:
-            boxes_np = boxes_np[0:1]
-            labels = [labels[0]]
-            scores = scores[0:1]
-
-        bboxes = {
-            "boxes": boxes_np,
-            "labels": labels,
-            "scores": scores,
-        }
-
-        # Create annotated image
-        annotated = self._draw_boxes(pil_image, boxes_np, labels, scores)
-        annotated_tensor = torch.from_numpy(np.array(annotated).astype(np.float32) / 255.0).unsqueeze(0)
-
-        labels_str = ", ".join(labels)
-
-        return (bboxes, annotated_tensor, labels_str)
-
-    def _detect_yolo_world(self, model, image, classes, confidence_threshold, single_box_mode=False):
-        """Detection using YOLO-World"""
-        # Convert ComfyUI image format
-        image_np = (image[0].cpu().numpy() * 255).astype(np.uint8)
-
-        # Parse classes (support both comma and period separation)
-        if ',' in classes:
-            class_list = [c.strip() for c in classes.split(",")]
-        else:
-            class_list = [c.strip() for c in classes.split(".") if c.strip()]
-
-        # Set classes for the model
-        model.set_classes(class_list)
-
-        # Run inference
-        results = model(image_np, conf=confidence_threshold)
-
-        # Extract detections
-        result = results[0]
-        boxes = result.boxes.xyxy.cpu().numpy() if result.boxes is not None else np.array([])
-        scores = result.boxes.conf.cpu().numpy() if result.boxes is not None else np.array([])
-        class_ids = result.boxes.cls.cpu().numpy().astype(int) if result.boxes is not None else np.array([])
-
-        # Map class IDs to names
-        labels = [class_list[cid] for cid in class_ids]
-
-        # Single box mode: return only highest-scoring detection (REC mode)
-        if single_box_mode and len(boxes) > 0:
-            top_idx = scores.argmax()
-            boxes = boxes[top_idx:top_idx+1]
-            labels = [labels[top_idx]]
-            scores = scores[top_idx:top_idx+1]
-
-        # Format output
-        bboxes = {
-            "boxes": boxes,
-            "labels": labels,
-            "scores": scores,
-        }
-
-        # Get annotated image
-        annotated_np = result.plot()
-        annotated_tensor = torch.from_numpy(annotated_np.astype(np.float32) / 255.0).unsqueeze(0)
-
-        # Format labels string
-        labels_str = ", ".join([f"{label} ({score:.2f})" for label, score in zip(labels, scores)])
-
-        return (bboxes, annotated_tensor, labels_str)
-
-    def _draw_boxes(self, image, boxes, labels, scores):
-        """Draw bounding boxes on image"""
-        from PIL import ImageDraw
-
-        # Make a copy to avoid modifying original
-        image = image.copy()
-        draw = ImageDraw.Draw(image)
-
-        for box, label, score in zip(boxes, labels, scores):
-            # box format: [x1, y1, x2, y2]
-            x1, y1, x2, y2 = box
-
-            # Draw rectangle
-            draw.rectangle([x1, y1, x2, y2], outline="red", width=3)
-
-            # Draw label
-            text = f"{label}: {score:.2f}"
-            draw.text((x1, y1 - 10), text, fill="red")
-
-        return image
+        return (result,)

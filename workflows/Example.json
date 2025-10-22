@@ -1,0 +1,353 @@
+{
+  "id": "b29971c7-6074-4707-895e-9f2360e11e2d",
+  "revision": 0,
+  "last_node_id": 30,
+  "last_link_id": 40,
+  "nodes": [
+    {
+      "id": 29,
+      "type": "LoadImage",
+      "pos": [
+        691.3480657963805,
+        244.71705551823334
+      ],
+      "size": [
+        274.080078125,
+        314
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            38,
+            40
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.65",
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "example.png",
+        "image"
+      ]
+    },
+    {
+      "id": 28,
+      "type": "MaskPreview",
+      "pos": [
+        1252.4602357504743,
+        329.44736978995775
+      ],
+      "size": [
+        140,
+        246.00000000000003
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 37
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.65",
+        "Node name for S&R": "MaskPreview"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 22,
+      "type": "PreviewImage",
+      "pos": [
+        1937.3573937178255,
+        228.10370816997101
+      ],
+      "size": [
+        140,
+        246.00000000000003
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 32
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.65",
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 30,
+      "type": "PreviewImage",
+      "pos": [
+        1664.5457193908678,
+        -114.32244507189236
+      ],
+      "size": [
+        140,
+        246
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 39
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.65",
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 21,
+      "type": "BboxVisualizer",
+      "pos": [
+        1608.8053963516986,
+        258.9104840919287
+      ],
+      "size": [
+        210,
+        78
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 40
+        },
+        {
+          "name": "bboxes",
+          "type": "BBOX",
+          "link": 31
+        }
+      ],
+      "outputs": [
+        {
+          "name": "annotated_image",
+          "type": "IMAGE",
+          "links": [
+            32
+          ]
+        }
+      ],
+      "properties": {
+        "aux_id": "PozzettiAndrea/ComfyUI-Grounding",
+        "ver": "c9c72642cd7affb18d5aa54f21ee7d3acf7412eb",
+        "Node name for S&R": "BboxVisualizer"
+      },
+      "widgets_values": [
+        3
+      ]
+    },
+    {
+      "id": 18,
+      "type": "GroundingModelLoader",
+      "pos": [
+        761.1567094157901,
+        37.11377863503034
+      ],
+      "size": [
+        272.064453125,
+        106
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "model",
+          "type": "GROUNDING_MODEL",
+          "links": [
+            27
+          ]
+        }
+      ],
+      "properties": {
+        "aux_id": "PozzettiAndrea/ComfyUI-Grounding",
+        "ver": "c9c72642cd7affb18d5aa54f21ee7d3acf7412eb",
+        "Node name for S&R": "GroundingModelLoader"
+      },
+      "widgets_values": [
+        "GroundingDINO: SwinB (938MB)",
+        true,
+        "eager"
+      ]
+    },
+    {
+      "id": 19,
+      "type": "GroundingDetector",
+      "pos": [
+        1147.1057310247927,
+        -143.3627616665786
+      ],
+      "size": [
+        400,
+        268
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "GROUNDING_MODEL",
+          "link": 27
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 38
+        }
+      ],
+      "outputs": [
+        {
+          "name": "bboxes",
+          "type": "BBOX",
+          "links": [
+            31
+          ]
+        },
+        {
+          "name": "annotated_image",
+          "type": "IMAGE",
+          "links": [
+            39
+          ]
+        },
+        {
+          "name": "labels",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "masks",
+          "type": "MASK",
+          "links": [
+            37
+          ]
+        }
+      ],
+      "properties": {
+        "aux_id": "PozzettiAndrea/ComfyUI-Grounding",
+        "ver": "c9c72642cd7affb18d5aa54f21ee7d3acf7412eb",
+        "Node name for S&R": "GroundingDetector"
+      },
+      "widgets_values": [
+        "character",
+        0.1,
+        0.01,
+        true,
+        "dict_with_data",
+        true
+      ]
+    }
+  ],
+  "links": [
+    [
+      27,
+      18,
+      0,
+      19,
+      0,
+      "GROUNDING_MODEL"
+    ],
+    [
+      31,
+      19,
+      0,
+      21,
+      1,
+      "BBOX"
+    ],
+    [
+      32,
+      21,
+      0,
+      22,
+      0,
+      "IMAGE"
+    ],
+    [
+      37,
+      19,
+      3,
+      28,
+      0,
+      "MASK"
+    ],
+    [
+      38,
+      29,
+      0,
+      19,
+      1,
+      "IMAGE"
+    ],
+    [
+      39,
+      19,
+      1,
+      30,
+      0,
+      "IMAGE"
+    ],
+    [
+      40,
+      29,
+      0,
+      21,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.8390550503631276,
+      "offset": [
+        -372.4858306734141,
+        284.24946587737446
+      ]
+    },
+    "frontendVersion": "1.28.7"
+  },
+  "version": 0.4
+}
