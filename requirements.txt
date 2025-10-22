@@ -1,0 +1,15 @@
+# Core dependencies for ComfyUI-Grounding
+
+# For GroundingDINO (HuggingFace transformers implementation)
+transformers>=4.30.0
+timm>=0.9.0
+
+# For YOLO-World
+ultralytics>=8.2.0
+
+# Image processing
+opencv-python>=4.8.0
+pillow>=10.0.0
+
+# Optional: supervision for advanced visualization
+# supervision>=0.16.0
