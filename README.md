@@ -5,9 +5,13 @@
 ![Simple Workflow](docs/simple.png)
 
 🎯 **3 Nodes Total** - Loader → Detector → Visualizer
+
 🚀 **5 Model Families** - GroundingDINO, MM-GroundingDINO, OWLv2, Florence-2, YOLO-World
+
 💾 **Smart Caching** - Instant reload
+
 📦 **Batch Processing** - Multiple images at once
+
 🎭 **Built-in Masks** - No separate BboxToMask node needed
 
 ## Quick Start
@@ -21,8 +25,11 @@ pip install -r requirements.txt
 
 ## The Nodes
 
+
 ### 1. Grounding Model Loader
-Load any of 10+ models from a single dropdown.
+Load any of 15+ models from a single dropdown.
+
+<div style="font-size: 0.75em; line-height: 1.4;">
 
   1. GroundingDINO: SwinT OGC (694MB) - IDEA-Research/grounding-dino-tiny
   2. GroundingDINO: SwinB (938MB) - IDEA-Research/grounding-dino-base
@@ -36,18 +43,21 @@ Load any of 10+ models from a single dropdown.
   10. OWLv2: Base Patch16 - google/owlv2-base-patch16
   11. OWLv2: Large Patch14 - google/owlv2-large-patch14
   12. OWLv2: Base Patch16 Ensemble - google/owlv2-base-patch16-ensemble
-  13. OWLv2: Large Patch14 Ensemble - google/owlv2-large-patch14-ensemble ⭐
-  14. Florence-2: Base (0.23B params) - microsoft/Florence-2-base ⚡ Best Balance
-  15. Florence-2: Large (0.77B params) - microsoft/Florence-2-large ⭐
-  16. YOLO-World: v8s (Small) - yolov8s-worldv2.pt ⚡ Fastest
+  13. OWLv2: Large Patch14 Ensemble - google/owlv2-large-patch14-ensemble
+  14. Florence-2: Base (0.23B params) - microsoft/Florence-2-base
+  15. Florence-2: Large (0.77B params) - microsoft/Florence-2-large
+  16. YOLO-World: v8s (Small) - yolov8s-worldv2.pt
   17. YOLO-World: v8m (Medium) - yolov8m-worldv2.pt
   18. YOLO-World: v8l (Large) - yolov8l-worldv2.pt
   19. YOLO-World: v8x (Extra Large) - yolov8x-worldv2.pt
+</div>
 
 ### 2. Grounding Detector
 Universal detector for all models.
 
-## Key Features
+#### Key Features
+
+<div style="font-size: 0.9em; line-height: 1.4;">
 
 - Overrides standard text label splitting. It splits only at ".", otherwise label is what you write
 - Enable `single_box_mode` for single detection
@@ -56,22 +66,28 @@ Universal detector for all models.
 - Models stored in `ComfyUI-Grounding/models/`
 - Process multiple images in one pass
 - All nodes support batches
+</div>
 
-## Florence-2 Attention Modes
+#### Florence-2 Attention Modes
+
+<div style="font-size: 0.9em; line-height: 1.4;">
 
 - `eager` - Most compatible (default)
 - `sdpa` - Faster on PyTorch 2.0+
 - `flash_attention_2` - Fastest on A100/H100
+</div>
 
-### 2. Bounding Box Visualizer
+### 3. Bounding Box Visualizer
+<div style="font-size: 0.9em; line-height: 1.4;">
 
 Re-draw bboxes on images with custom line width. Optional since detector already returns annotated images.
+</div>
 
-## Tips
+### Tips
 
 **Prompt Format:**
-- Use periods for multiple labels → `"cat . dog ."`
-- Use commas to keep a single label → `"cat, dog"`
+- Use periods for multiple labels → `"laser. crocodile."`
+- Use commas to keep a single label → `"laser, crocodile"`
 
 ## Credits
 
