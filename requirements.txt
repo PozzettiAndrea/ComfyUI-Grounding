@@ -12,3 +12,8 @@ ultralytics>=8.2.0
 
 # Optional: supervision for advanced visualization
 # supervision>=0.16.0
+
+# For SAM2 segmentation nodes
+huggingface_hub>=0.20.0
+pyyaml>=6.0
+tqdm>=4.65.0

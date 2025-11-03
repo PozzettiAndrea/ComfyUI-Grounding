@@ -63,7 +63,11 @@ Universal detector for all models.
 - Enable `single_box_mode` for single detection
 - First load: Downloads model
 - Second load: Instant from cache
-- Models stored in `ComfyUI-Grounding/models/`
+- Models stored in ComfyUI standard folders:
+  - GroundingDINO → `models/grounding-dino/`
+  - Florence-2 & OWLv2 → `models/LLM/`
+  - YOLO-World → `models/yolo_world/`
+  - SAM2 → `models/sam2/`
 - Process multiple images in one pass
 - All nodes support batches
 </div>
@@ -81,6 +85,18 @@ Universal detector for all models.
 <div style="font-size: 0.9em; line-height: 1.4;">
 
 Re-draw bboxes on images with custom line width. Optional since detector already returns annotated images.
+</div>
+
+### 4. SAM2 Integration
+
+<div style="font-size: 0.9em; line-height: 1.4;">
+
+**DownloadAndLoadSAM2Model** - Load SAM2 models (base/large/small/tiny)
+**Sam2Segmentation** - Segment using bboxes from grounding models or point coordinates
+
+- Supports batch processing
+- Models cached in memory for instant reload
+- Compatible with all grounding model outputs
 </div>
 
 ### Tips
