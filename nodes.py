@@ -131,6 +131,38 @@ MODEL_REGISTRY = {
     },
 }
 
+# Mask model registry for native segmentation models
+MASK_MODEL_REGISTRY = {
+    # Florence-2 Segmentation models
+    "Florence-2: Base (Segmentation)": {
+        "type": "florence2_seg",
+        "hf_id": "microsoft/Florence-2-base",
+        "framework": "transformers",
+    },
+    "Florence-2: Large (Segmentation)": {
+        "type": "florence2_seg",
+        "hf_id": "microsoft/Florence-2-large",
+        "framework": "transformers",
+    },
+    # LISA Reasoning Segmentation models
+    "LISA: 7B-v1": {
+        "type": "lisa",
+        "hf_id": "xinlai/LISA-7B-v1",
+        "framework": "custom",
+    },
+    "LISA: 13B-llama2-v1": {
+        "type": "lisa",
+        "hf_id": "xinlai/LISA-13B-llama2-v1",
+        "framework": "custom",
+    },
+    # PSALM Multi-Task Segmentation
+    "PSALM: 2B": {
+        "type": "psalm",
+        "hf_id": "EnmingZhang/PSALM",
+        "framework": "transformers",
+    },
+}
+
 
 class GroundingModelLoader:
     """
@@ -148,9 +180,15 @@ class GroundingModelLoader:
                 "keep_in_memory": ("BOOLEAN", {"default": True}),
             },
             "optional": {
+                # GroundingDINO parameters
+                "grounding_dino_attn": (["eager", "sdpa", "flash_attention_2"], {
+                    "default": "eager",
+                    "tooltip": "🎯 GroundingDINO ONLY! Attention implementation: eager=most compatible, sdpa=PyTorch 2.0+, flash_attention_2=A100/H100"
+                }),
+                # Florence-2 parameters
                 "florence2_attn": (["eager", "sdpa", "flash_attention_2"], {
                     "default": "eager",
-                    "tooltip": "⚠️ FLORENCE-2 ONLY! Ignored for all other models. eager=most compatible, sdpa=PyTorch 2.0+, flash_attention_2=A100/H100"
+                    "tooltip": "🌸 Florence-2 ONLY! Attention implementation: eager=most compatible, sdpa=PyTorch 2.0+, flash_attention_2=A100/H100"
                 }),
             }
         }
@@ -160,7 +198,9 @@ class GroundingModelLoader:
     FUNCTION = "load_model"
     CATEGORY = "grounding"
 
-    def load_model(self, model: str, keep_in_memory: bool = True, florence2_attn: str = "eager"):
+    def load_model(self, model: str, keep_in_memory: bool = True,
+                   grounding_dino_attn: str = "eager",
+                   florence2_attn: str = "eager"):
         """Load any grounding model with unified interface"""
 
         # Get model config
@@ -170,8 +210,18 @@ class GroundingModelLoader:
         config = MODEL_REGISTRY[model]
         model_type = config["type"]
 
-        # Create cache key
-        cache_key = f"{model_type}_{model}_{florence2_attn if model_type == 'florence2' else 'default'}"
+        # Create cache key based on model-specific parameters
+        # Note: Only include parameters that affect model loading, not inference
+        if model_type == "florence2":
+            # Florence-2 inference params (max_tokens, num_beams) are now in detector, not cached
+            cache_key = f"{model_type}_{model}_{florence2_attn}"
+        elif model_type == "grounding_dino":
+            cache_key = f"{model_type}_{model}_{grounding_dino_attn}"
+        elif model_type == "yolo_world":
+            # YOLO inference params (iou, nms, max_det) are now in detector, not cached
+            cache_key = f"{model_type}_{model}"
+        else:
+            cache_key = f"{model_type}_{model}_default"
 
         # Check cache
         if keep_in_memory and cache_key in MODEL_CACHE:
@@ -185,7 +235,11 @@ class GroundingModelLoader:
 
         # Load model based on framework
         if config["framework"] == "transformers":
-            loaded_model = self._load_transformers_model(model, config, florence2_attn)
+            loaded_model = self._load_transformers_model(
+                model, config,
+                grounding_dino_attn=grounding_dino_attn,
+                florence2_attn=florence2_attn
+            )
         elif config["framework"] == "ultralytics":
             loaded_model = self._load_yolo_model(model, config)
         else:
@@ -198,7 +252,9 @@ class GroundingModelLoader:
 
         return (loaded_model,)
 
-    def _load_transformers_model(self, model_name: str, config: dict, florence2_attn: str):
+    def _load_transformers_model(self, model_name: str, config: dict,
+                                  grounding_dino_attn: str = "eager",
+                                  florence2_attn: str = "eager"):
         """Load transformers-based models (GroundingDINO, OWLv2, Florence-2)"""
         model_type = config["type"]
         hf_id = config["hf_id"]
@@ -216,8 +272,13 @@ class GroundingModelLoader:
 
         if model_type in ["grounding_dino"]:
             from transformers import AutoProcessor, AutoModelForZeroShotObjectDetection
+            print(f"Using GroundingDINO attention implementation: {grounding_dino_attn}")
             processor = AutoProcessor.from_pretrained(hf_id, cache_dir=cache_dir)
-            model = AutoModelForZeroShotObjectDetection.from_pretrained(hf_id, cache_dir=cache_dir)
+            model = AutoModelForZeroShotObjectDetection.from_pretrained(
+                hf_id,
+                cache_dir=cache_dir,
+                attn_implementation=grounding_dino_attn
+            )
 
         elif model_type == "owlv2":
             from transformers import Owlv2Processor, Owlv2ForObjectDetection
@@ -242,12 +303,14 @@ class GroundingModelLoader:
 
         print(f"✅ Successfully loaded {model_name}")
 
-        return {
+        result = {
             "model": model,
             "processor": processor,
             "type": model_type,
             "framework": "transformers"
         }
+
+        return result
 
     def _load_yolo_model(self, model_name: str, config: dict):
         """Load YOLO-World models"""
@@ -274,6 +337,7 @@ class GroundingModelLoader:
 
         # Load model
         print(f"📂 Loading {model_name} from {model_path}")
+        print(f"YOLO inference params: iou={yolo_iou}, agnostic_nms={yolo_agnostic_nms}, max_det={yolo_max_det}")
         model = YOLOWorld(model_path)
 
         # Move to device
@@ -311,6 +375,7 @@ class GroundingDetector:
                     "min": 0.0,
                     "max": 1.0,
                     "step": 0.01,
+                    "tooltip": "Confidence threshold for detections. Typical: 0.2-0.35 (permissive), 0.35-0.5 (balanced), 0.5+ (strict)"
                 }),
             },
             "optional": {
@@ -319,11 +384,11 @@ class GroundingDetector:
                     "min": 0.0,
                     "max": 1.0,
                     "step": 0.01,
-                    "tooltip": "⚠️ Only used for GroundingDINO models"
+                    "tooltip": "🦖 GroundingDINO ONLY! Text-image similarity threshold. Typical: 0.2-0.25 (permissive), 0.25-0.3 (balanced), 0.3+ (strict)"
                 }),
                 "single_box_mode": ("BOOLEAN", {
                     "default": False,
-                    "tooltip": "Return only highest-scoring detection (for referring expressions)"
+                    "tooltip": "Return only the highest-scoring detection. Use for referring expressions (e.g., 'the red car on the left')"
                 }),
                 "bbox_output_format": (["list_only", "dict_with_data"], {
                     "default": "list_only",
@@ -331,7 +396,47 @@ class GroundingDetector:
                 }),
                 "output_masks": ("BOOLEAN", {
                     "default": False,
-                    "tooltip": "Convert bounding boxes to binary masks"
+                    "tooltip": "Convert bounding boxes to binary masks. Enable for segmentation tasks or mask-based operations"
+                }),
+                # Florence-2 parameters (inference-time only)
+                "florence2_max_tokens": ("INT", {
+                    "default": 1024,
+                    "min": 1,
+                    "max": 4096,
+                    "step": 1,
+                    "tooltip": "🌸 Florence-2 ONLY! Max tokens for generation. Typical: 512 (fast), 1024 (balanced), 2048+ (complex scenes)"
+                }),
+                "florence2_num_beams": ("INT", {
+                    "default": 3,
+                    "min": 1,
+                    "max": 10,
+                    "step": 1,
+                    "tooltip": "🌸 Florence-2 ONLY! Beam search width. 1 (greedy/fastest), 3 (balanced/default), 5+ (better quality, slower)"
+                }),
+                # YOLO-World parameters (moved from loader to detector)
+                "yolo_iou": ("FLOAT", {
+                    "default": 0.45,
+                    "min": 0.0,
+                    "max": 1.0,
+                    "step": 0.05,
+                    "tooltip": "🌍 YOLO-World ONLY! IoU threshold for NMS. Typical: 0.3-0.4 (keep more overlapping boxes), 0.45 (balanced/default), 0.5-0.7 (aggressive filtering)"
+                }),
+                "yolo_agnostic_nms": ("BOOLEAN", {
+                    "default": False,
+                    "tooltip": "🌍 YOLO-World ONLY! Class-agnostic NMS. Enable when detecting overlapping objects of different classes (e.g., person holding bottle)"
+                }),
+                "yolo_max_det": ("INT", {
+                    "default": 300,
+                    "min": 1,
+                    "max": 1000,
+                    "step": 10,
+                    "tooltip": "🌍 YOLO-World ONLY! Max detections per image. Typical: 100 (sparse), 300 (balanced/default), 500-1000 (dense/crowded scenes)"
+                }),
+                "seed": ("INT", {
+                    "default": 0,
+                    "min": 0,
+                    "max": 0xffffffffffffffff,
+                    "tooltip": "Random seed for reproducible results (affects mask visualization colors and model randomness)"
                 }),
             }
         }
@@ -343,8 +448,18 @@ class GroundingDetector:
 
     def detect(self, model, image, prompt: str, confidence_threshold: float,
                text_threshold: float = 0.25, single_box_mode: bool = False,
-               bbox_output_format: str = "list_only", output_masks: bool = False):
+               bbox_output_format: str = "list_only", output_masks: bool = False,
+               florence2_max_tokens: int = 1024, florence2_num_beams: int = 3,
+               yolo_iou: float = 0.45, yolo_agnostic_nms: bool = False, yolo_max_det: int = 300,
+               seed: int = 0):
         """Universal detection that works with any model"""
+
+        # Set random seed for reproducibility
+        random.seed(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
 
         model_type = model["type"]
 
@@ -357,10 +472,12 @@ class GroundingDetector:
                                      single_box_mode, bbox_output_format, output_masks)
         elif model_type == "florence2":
             return self._detect_florence2(model, image, prompt, confidence_threshold,
-                                         single_box_mode, bbox_output_format, output_masks)
+                                         single_box_mode, bbox_output_format, output_masks,
+                                         florence2_max_tokens, florence2_num_beams)
         elif model_type == "yolo_world":
             return self._detect_yolo_world(model, image, prompt, confidence_threshold,
-                                          single_box_mode, bbox_output_format, output_masks)
+                                          single_box_mode, bbox_output_format, output_masks,
+                                          yolo_iou, yolo_agnostic_nms, yolo_max_det)
         else:
             raise ValueError(f"Unknown model type: {model_type}")
 
@@ -498,7 +615,8 @@ class GroundingDetector:
                                    image.shape, bbox_output_format, output_masks)
 
     def _detect_florence2(self, model_dict, image, prompt, box_threshold,
-                         single_box_mode, bbox_output_format, output_masks):
+                         single_box_mode, bbox_output_format, output_masks,
+                         florence2_max_tokens, florence2_num_beams):
         """Detection using Florence-2"""
         model = model_dict["model"]
         processor = model_dict["processor"]
@@ -528,13 +646,17 @@ class GroundingDetector:
             task_prompt = "<CAPTION_TO_PHRASE_GROUNDING>"
             inputs = processor(text=task_prompt + caption, images=pil_image, return_tensors="pt").to(device)
 
+            # Use generation parameters passed from detector
+            max_new_tokens = florence2_max_tokens
+            num_beams = florence2_num_beams
+
             # Run inference
             with torch.no_grad():
                 generated_ids = model.generate(
                     input_ids=inputs["input_ids"],
                     pixel_values=inputs["pixel_values"],
-                    max_new_tokens=1024,
-                    num_beams=3,
+                    max_new_tokens=max_new_tokens,
+                    num_beams=num_beams,
                     use_cache=False,  # Prevent past_key_values issues
                 )
 
@@ -580,7 +702,8 @@ class GroundingDetector:
                                    image.shape, bbox_output_format, output_masks)
 
     def _detect_yolo_world(self, model_dict, image, classes, confidence_threshold,
-                          single_box_mode, bbox_output_format, output_masks):
+                          single_box_mode, bbox_output_format, output_masks,
+                          yolo_iou, yolo_agnostic_nms, yolo_max_det):
         """Detection using YOLO-World"""
         model = model_dict["model"]
 
@@ -600,12 +723,21 @@ class GroundingDetector:
         # Set classes for model
         model.set_classes(class_list)
 
+        # Use YOLO inference parameters passed from detector
+        # (these are now detector parameters, not loader parameters)
+
         for i in range(batch_size):
             # Convert to numpy
             image_np = (image[i].cpu().numpy() * 255).astype(np.uint8)
 
-            # Run inference
-            results = model(image_np, conf=confidence_threshold)
+            # Run inference with custom parameters
+            results = model(
+                image_np,
+                conf=confidence_threshold,
+                iou=yolo_iou,
+                agnostic_nms=yolo_agnostic_nms,
+                max_det=yolo_max_det
+            )
 
             # Extract detections
             result = results[0]
@@ -1187,3 +1319,400 @@ class Sam2Segmentation:
             out_list.append(mask_tensor)
         mask_tensor = torch.stack(out_list, dim=0).cpu().float()
         return (mask_tensor,)
+
+
+class GroundMaskModelLoader:
+    """
+    Model loader for native segmentation models
+    Supports: Florence-2 (Segmentation), LISA, PSALM
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "model": (list(MASK_MODEL_REGISTRY.keys()), {
+                    "default": "Florence-2: Base (Segmentation)",
+                }),
+                "keep_in_memory": ("BOOLEAN", {"default": True}),
+            },
+            "optional": {
+                # Florence-2 parameters
+                "florence2_attn": (["eager", "sdpa", "flash_attention_2"], {
+                    "default": "eager",
+                    "tooltip": "🌸 Florence-2 ONLY! Attention implementation: eager=most compatible, sdpa=PyTorch 2.0+, flash_attention_2=A100/H100"
+                }),
+            }
+        }
+
+    RETURN_TYPES = ("GROUND_MASK_MODEL",)
+    RETURN_NAMES = ("model",)
+    FUNCTION = "load_model"
+    CATEGORY = "grounding"
+
+    def load_model(self, model: str, keep_in_memory: bool = True,
+                   florence2_attn: str = "eager"):
+        """Load mask segmentation model"""
+
+        # Get model config
+        if model not in MASK_MODEL_REGISTRY:
+            raise ValueError(f"Unknown mask model: {model}")
+
+        config = MASK_MODEL_REGISTRY[model]
+        model_type = config["type"]
+
+        # Create cache key
+        if model_type == "florence2_seg":
+            cache_key = f"{model_type}_{model}_{florence2_attn}"
+        elif model_type == "lisa":
+            cache_key = f"{model_type}_{model}"
+        elif model_type == "psalm":
+            cache_key = f"{model_type}_{model}"
+        else:
+            cache_key = f"{model_type}_{model}_default"
+
+        # Check cache
+        if keep_in_memory and cache_key in MODEL_CACHE:
+            print(f"✅ Loading {model} from cache")
+            return (MODEL_CACHE[cache_key],)
+
+        # Clear cache if requested
+        if not keep_in_memory and cache_key in MODEL_CACHE:
+            print(f"🗑️ Removing {model} from cache")
+            del MODEL_CACHE[cache_key]
+
+        # Load model based on type
+        if model_type == "florence2_seg":
+            loaded_model = self._load_florence2_seg(model, config, florence2_attn)
+        elif model_type == "lisa":
+            loaded_model = self._load_lisa(model, config)
+        elif model_type == "psalm":
+            loaded_model = self._load_psalm(model, config)
+        else:
+            raise ValueError(f"Unknown model type: {model_type}")
+
+        # Cache if requested
+        if keep_in_memory:
+            MODEL_CACHE[cache_key] = loaded_model
+            print(f"💾 Cached {model} in memory")
+
+        return (loaded_model,)
+
+    def _load_florence2_seg(self, model_name: str, config: dict, florence2_attn: str = "eager"):
+        """Load Florence-2 for segmentation"""
+        from transformers import AutoProcessor, AutoModelForCausalLM
+
+        hf_id = config["hf_id"]
+        device = mm.get_torch_device()
+
+        # Use ComfyUI standard model directories
+        cache_dir = os.path.join(folder_paths.models_dir, "llm")
+        os.makedirs(cache_dir, exist_ok=True)
+
+        print(f"📦 Loading Florence-2 Segmentation Model: {model_name}")
+        print(f"Using Florence-2 attention implementation: {florence2_attn}")
+
+        processor = AutoProcessor.from_pretrained(hf_id, cache_dir=cache_dir, trust_remote_code=True)
+        model = AutoModelForCausalLM.from_pretrained(
+            hf_id,
+            cache_dir=cache_dir,
+            trust_remote_code=True,
+            attn_implementation=florence2_attn
+        )
+
+        model.to(device)
+        model.eval()
+
+        print(f"✅ Successfully loaded {model_name}")
+
+        return {
+            "model": model,
+            "processor": processor,
+            "type": "florence2_seg",
+            "framework": "transformers"
+        }
+
+    def _load_lisa(self, model_name: str, config: dict):
+        """Load LISA model - placeholder for future implementation"""
+        raise NotImplementedError("LISA support coming soon! Use Florence-2 Segmentation for now.")
+
+    def _load_psalm(self, model_name: str, config: dict):
+        """Load PSALM model - placeholder for future implementation"""
+        raise NotImplementedError("PSALM support coming soon! Use Florence-2 Segmentation for now.")
+
+
+class GroundMaskDetector:
+    """
+    Native segmentation detector for mask models
+    Outputs segmentation masks directly without SAM2 pipeline
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "model": ("GROUND_MASK_MODEL",),
+                "image": ("IMAGE",),
+                "prompt": ("STRING", {
+                    "default": "person . car . dog .",
+                    "multiline": True,
+                    "tooltip": "Use periods (.) to separate objects for Florence-2 segmentation"
+                }),
+                "confidence_threshold": ("FLOAT", {
+                    "default": 0.3,
+                    "min": 0.0,
+                    "max": 1.0,
+                    "step": 0.01,
+                    "tooltip": "Confidence threshold for detections. Typical: 0.2-0.35 (permissive), 0.35-0.5 (balanced), 0.5+ (strict)"
+                }),
+            },
+            "optional": {
+                # Florence-2 parameters
+                "florence2_max_tokens": ("INT", {
+                    "default": 1024,
+                    "min": 1,
+                    "max": 4096,
+                    "step": 1,
+                    "tooltip": "🌸 Florence-2 ONLY! Max tokens for generation. Typical: 512 (fast), 1024 (balanced), 2048+ (complex scenes)"
+                }),
+                "florence2_num_beams": ("INT", {
+                    "default": 3,
+                    "min": 1,
+                    "max": 10,
+                    "step": 1,
+                    "tooltip": "🌸 Florence-2 ONLY! Beam search width. 1 (greedy/fastest), 3 (balanced/default), 5+ (better quality, slower)"
+                }),
+                "seed": ("INT", {
+                    "default": 0,
+                    "min": 0,
+                    "max": 0xffffffffffffffff,
+                    "tooltip": "Random seed for reproducible results (affects mask visualization colors and model randomness)"
+                }),
+            }
+        }
+
+    RETURN_TYPES = ("MASK", "BBOX", "STRING", "IMAGE")
+    RETURN_NAMES = ("masks", "bboxes", "labels", "annotated_image")
+    FUNCTION = "detect"
+    CATEGORY = "grounding"
+
+    def detect(self, model, image, prompt: str, confidence_threshold: float,
+               florence2_max_tokens: int = 1024, florence2_num_beams: int = 3,
+               seed: int = 0):
+        """Universal segmentation detection"""
+
+        # Set random seed for reproducibility
+        random.seed(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+
+        model_type = model["type"]
+
+        # Route to appropriate detection method
+        if model_type == "florence2_seg":
+            return self._detect_florence2_seg(model, image, prompt, confidence_threshold,
+                                             florence2_max_tokens, florence2_num_beams)
+        elif model_type == "lisa":
+            return self._detect_lisa(model, image, prompt, confidence_threshold)
+        elif model_type == "psalm":
+            return self._detect_psalm(model, image, prompt, confidence_threshold)
+        else:
+            raise ValueError(f"Unknown model type: {model_type}")
+
+    def _detect_florence2_seg(self, model_dict, image, prompt, confidence_threshold,
+                             florence2_max_tokens, florence2_num_beams):
+        """Detection using Florence-2 segmentation"""
+        model = model_dict["model"]
+        processor = model_dict["processor"]
+        device = mm.get_torch_device()
+
+        batch_size = image.shape[0]
+        all_masks = []
+        all_boxes = []
+        all_labels = []
+        annotated_images = []
+
+        for i in range(batch_size):
+            # Convert to PIL
+            image_np = (image[i].cpu().numpy() * 255).astype(np.uint8)
+            pil_image = Image.fromarray(image_np)
+
+            # Parse text queries
+            has_separator = '.' in prompt
+            if has_separator:
+                text_queries = [c.strip() for c in prompt.split(".") if c.strip()]
+                caption = " ".join(text_queries)
+            else:
+                caption = prompt.strip()
+                text_queries = [caption]
+
+            # Prepare task and inputs for segmentation
+            task_prompt = "<REFERRING_EXPRESSION_SEGMENTATION>"
+            inputs = processor(text=task_prompt + caption, images=pil_image, return_tensors="pt").to(device)
+
+            # Use generation parameters
+            max_new_tokens = florence2_max_tokens
+            num_beams = florence2_num_beams
+
+            # Run inference
+            with torch.no_grad():
+                generated_ids = model.generate(
+                    input_ids=inputs["input_ids"],
+                    pixel_values=inputs["pixel_values"],
+                    max_new_tokens=max_new_tokens,
+                    num_beams=num_beams,
+                    use_cache=False,
+                )
+
+            # Decode output
+            generated_text = processor.batch_decode(generated_ids, skip_special_tokens=False)[0]
+            parsed = processor.post_process_generation(
+                generated_text,
+                task=task_prompt,
+                image_size=(pil_image.width, pil_image.height)
+            )
+
+            # Extract polygons and labels
+            if task_prompt in parsed and "polygons" in parsed[task_prompt]:
+                polygons_data = parsed[task_prompt]["polygons"]
+                labels_data = parsed[task_prompt].get("labels", [])
+
+                image_masks = []
+                image_boxes = []
+                image_labels = []
+
+                for poly_list, label in zip(polygons_data, labels_data):
+                    # Each poly_list contains one or more polygons for this object
+                    for polygon in poly_list:
+                        # Convert polygon to mask
+                        mask = self._polygon_to_mask(polygon, image_np.shape[:2])
+
+                        # Extract bbox from mask
+                        bbox = self._mask_to_bbox(mask)
+
+                        image_masks.append(mask)
+                        image_boxes.append(bbox)
+                        image_labels.append(label)
+
+                all_masks.append(image_masks)
+                all_boxes.append(image_boxes)
+                all_labels.append(image_labels)
+            else:
+                # No detections
+                all_masks.append([])
+                all_boxes.append([])
+                all_labels.append([])
+
+            # Create annotated image
+            annotated_image_np = self._draw_segmentation(image_np, all_masks[i], all_labels[i])
+            annotated_tensor = torch.from_numpy(annotated_image_np).float() / 255.0
+            annotated_images.append(annotated_tensor)
+
+        # Format outputs
+        return self._format_output(all_masks, all_boxes, all_labels, annotated_images, image.shape)
+
+    def _polygon_to_mask(self, polygon, image_shape):
+        """Convert polygon coordinates to binary mask"""
+        from PIL import Image, ImageDraw
+
+        height, width = image_shape
+        mask = Image.new('L', (width, height), 0)
+
+        # Polygon is a flat list [x0, y0, x1, y1, ...]
+        # Convert to list of tuples [(x0, y0), (x1, y1), ...]
+        points = [(polygon[i], polygon[i+1]) for i in range(0, len(polygon), 2)]
+
+        ImageDraw.Draw(mask).polygon(points, outline=1, fill=1)
+
+        return np.array(mask, dtype=np.float32)
+
+    def _mask_to_bbox(self, mask):
+        """Extract bounding box from binary mask"""
+        # Find coordinates where mask is non-zero
+        rows = np.any(mask, axis=1)
+        cols = np.any(mask, axis=0)
+
+        if not rows.any() or not cols.any():
+            # Empty mask
+            return [0, 0, 0, 0]
+
+        rmin, rmax = np.where(rows)[0][[0, -1]]
+        cmin, cmax = np.where(cols)[0][[0, -1]]
+
+        # Return in xyxy format
+        return [float(cmin), float(rmin), float(cmax), float(rmax)]
+
+    def _draw_segmentation(self, image_np, masks, labels):
+        """Draw segmentation masks on image"""
+        annotated = image_np.copy()
+
+        # Generate colors for each mask
+        for i, (mask, label) in enumerate(zip(masks, labels)):
+            # Generate random color
+            color = np.array([
+                random.randint(0, 255),
+                random.randint(0, 255),
+                random.randint(0, 255)
+            ], dtype=np.uint8)
+
+            # Apply colored mask with transparency
+            mask_3d = np.stack([mask] * 3, axis=-1)
+            colored_mask = mask_3d * color
+            annotated = np.where(mask_3d > 0,
+                                annotated * 0.6 + colored_mask * 0.4,
+                                annotated).astype(np.uint8)
+
+        return annotated
+
+    def _format_output(self, all_masks, all_boxes, all_labels, annotated_images, image_shape):
+        """Format detection outputs"""
+        batch_size = image_shape[0]
+
+        # Convert masks to tensor
+        max_masks = max(len(masks) for masks in all_masks) if all_masks else 0
+        if max_masks == 0:
+            # No detections
+            empty_mask = torch.zeros((batch_size, 1, image_shape[1], image_shape[2]), dtype=torch.float32)
+            empty_bbox = [[]]
+            empty_labels = ""
+            annotated_stack = torch.stack(annotated_images, dim=0)
+            return (empty_mask, empty_bbox, empty_labels, annotated_stack)
+
+        # Stack masks
+        mask_list = []
+        for masks in all_masks:
+            if len(masks) > 0:
+                stacked = np.stack(masks, axis=0)
+                mask_list.append(torch.from_numpy(stacked))
+            else:
+                # Add empty mask for this batch item
+                mask_list.append(torch.zeros((1, image_shape[1], image_shape[2])))
+
+        # Pad to same number of masks
+        padded_masks = []
+        for masks_tensor in mask_list:
+            if masks_tensor.shape[0] < max_masks:
+                padding = torch.zeros((max_masks - masks_tensor.shape[0], image_shape[1], image_shape[2]))
+                padded_masks.append(torch.cat([masks_tensor, padding], dim=0))
+            else:
+                padded_masks.append(masks_tensor)
+
+        final_masks = torch.stack(padded_masks, dim=0).float()
+
+        # Format labels
+        labels_str = "\n".join([", ".join(labels) if labels else "" for labels in all_labels])
+
+        # Stack annotated images
+        annotated_stack = torch.stack(annotated_images, dim=0)
+
+        return (final_masks, all_boxes, labels_str, annotated_stack)
+
+    def _detect_lisa(self, model_dict, image, prompt, confidence_threshold):
+        """LISA detection - placeholder"""
+        raise NotImplementedError("LISA support coming soon!")
+
+    def _detect_psalm(self, model_dict, image, prompt, confidence_threshold):
+        """PSALM detection - placeholder"""
+        raise NotImplementedError("PSALM support coming soon!")
