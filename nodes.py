@@ -144,6 +144,27 @@ MASK_MODEL_REGISTRY = {
         "hf_id": "microsoft/Florence-2-large",
         "framework": "transformers",
     },
+    # SA2VA Vision-Language Segmentation models
+    "SA2VA: 1B": {
+        "type": "sa2va",
+        "hf_id": "ByteDance/Sa2VA-1B",
+        "framework": "transformers",
+    },
+    "SA2VA: 4B": {
+        "type": "sa2va",
+        "hf_id": "ByteDance/Sa2VA-4B",
+        "framework": "transformers",
+    },
+    "SA2VA: 8B": {
+        "type": "sa2va",
+        "hf_id": "ByteDance/Sa2VA-8B",
+        "framework": "transformers",
+    },
+    "SA2VA: 26B": {
+        "type": "sa2va",
+        "hf_id": "ByteDance/Sa2VA-26B",
+        "framework": "transformers",
+    },
     # LISA Reasoning Segmentation models
     "LISA: 7B-v1": {
         "type": "lisa",
@@ -435,7 +456,7 @@ class GroundingDetector:
                 "seed": ("INT", {
                     "default": 0,
                     "min": 0,
-                    "max": 0xffffffffffffffff,
+                    "max": 0xffffffff,  # 2^32 - 1, max for numpy.random.seed
                     "tooltip": "Random seed for reproducible results (affects mask visualization colors and model randomness)"
                 }),
             }
@@ -1342,6 +1363,11 @@ class GroundMaskModelLoader:
                     "default": "eager",
                     "tooltip": "🌸 Florence-2 ONLY! Attention implementation: eager=most compatible, sdpa=PyTorch 2.0+, flash_attention_2=A100/H100"
                 }),
+                # SA2VA parameters
+                "sa2va_dtype": (["auto", "fp16", "bf16", "fp32"], {
+                    "default": "auto",
+                    "tooltip": "🎨 SA2VA ONLY! Model precision: auto=automatic selection, fp16=half precision, bf16=bfloat16, fp32=full precision"
+                }),
             }
         }
 
@@ -1351,7 +1377,7 @@ class GroundMaskModelLoader:
     CATEGORY = "grounding"
 
     def load_model(self, model: str, keep_in_memory: bool = True,
-                   florence2_attn: str = "eager"):
+                   florence2_attn: str = "eager", sa2va_dtype: str = "auto"):
         """Load mask segmentation model"""
 
         # Get model config
@@ -1364,6 +1390,8 @@ class GroundMaskModelLoader:
         # Create cache key
         if model_type == "florence2_seg":
             cache_key = f"{model_type}_{model}_{florence2_attn}"
+        elif model_type == "sa2va":
+            cache_key = f"{model_type}_{model}_{sa2va_dtype}"
         elif model_type == "lisa":
             cache_key = f"{model_type}_{model}"
         elif model_type == "psalm":
@@ -1384,6 +1412,8 @@ class GroundMaskModelLoader:
         # Load model based on type
         if model_type == "florence2_seg":
             loaded_model = self._load_florence2_seg(model, config, florence2_attn)
+        elif model_type == "sa2va":
+            loaded_model = self._load_sa2va(model, config, sa2va_dtype)
         elif model_type == "lisa":
             loaded_model = self._load_lisa(model, config)
         elif model_type == "psalm":
@@ -1432,6 +1462,60 @@ class GroundMaskModelLoader:
             "framework": "transformers"
         }
 
+    def _load_sa2va(self, model_name: str, config: dict, sa2va_dtype: str = "auto"):
+        """Load SA2VA model for vision-language segmentation"""
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+
+        hf_id = config["hf_id"]
+        device = mm.get_torch_device()
+
+        # Use ComfyUI standard model directories
+        cache_dir = os.path.join(folder_paths.models_dir, "sa2va")
+        os.makedirs(cache_dir, exist_ok=True)
+
+        print(f"📦 Loading SA2VA Model: {model_name}")
+        print(f"🎨 Using SA2VA dtype: {sa2va_dtype}")
+
+        # Map dtype string to torch dtype
+        dtype_map = {
+            "auto": "auto",
+            "fp16": torch.float16,
+            "bf16": torch.bfloat16,
+            "fp32": torch.float32
+        }
+        torch_dtype = dtype_map.get(sa2va_dtype, "auto")
+
+        print(f"📥 Loading model from HuggingFace ({hf_id})...")
+        print(f"📂 Cache directory: {cache_dir}")
+        print(f"⚠️  IMPORTANT: trust_remote_code=True is required for SA2VA")
+
+        # Load model
+        model = AutoModelForCausalLM.from_pretrained(
+            hf_id,
+            torch_dtype=torch_dtype,
+            device_map=device,
+            cache_dir=cache_dir,
+            trust_remote_code=True  # Required for SA2VA custom code
+        )
+
+        # Load tokenizer
+        tokenizer = AutoTokenizer.from_pretrained(
+            hf_id,
+            cache_dir=cache_dir,
+            trust_remote_code=True  # Required for SA2VA custom code
+        )
+
+        model.eval()
+
+        print(f"✅ Successfully loaded {model_name}")
+
+        return {
+            "model": model,
+            "tokenizer": tokenizer,
+            "type": "sa2va",
+            "framework": "transformers"
+        }
+
     def _load_lisa(self, model_name: str, config: dict):
         """Load LISA model - placeholder for future implementation"""
         raise NotImplementedError("LISA support coming soon! Use Florence-2 Segmentation for now.")
@@ -1456,7 +1540,7 @@ class GroundMaskDetector:
                 "prompt": ("STRING", {
                     "default": "person . car . dog .",
                     "multiline": True,
-                    "tooltip": "Use periods (.) to separate objects for Florence-2 segmentation"
+                    "tooltip": "Florence-2: Use periods (.) to separate objects | SA2VA: Use natural language like 'Segment the person' or 'Please segment all objects'"
                 }),
                 "confidence_threshold": ("FLOAT", {
                     "default": 0.3,
@@ -1482,22 +1566,38 @@ class GroundMaskDetector:
                     "step": 1,
                     "tooltip": "🌸 Florence-2 ONLY! Beam search width. 1 (greedy/fastest), 3 (balanced/default), 5+ (better quality, slower)"
                 }),
+                # SA2VA parameters
+                "sa2va_max_tokens": ("INT", {
+                    "default": 2048,
+                    "min": 512,
+                    "max": 4096,
+                    "step": 1,
+                    "tooltip": "🎨 SA2VA ONLY! Max tokens for generation. Typical: 1024 (fast), 2048 (balanced/default), 4096 (complex)"
+                }),
+                "sa2va_num_beams": ("INT", {
+                    "default": 1,
+                    "min": 1,
+                    "max": 10,
+                    "step": 1,
+                    "tooltip": "🎨 SA2VA ONLY! Beam search width. 1 (greedy/fastest/default), 3-5 (better quality, slower)"
+                }),
                 "seed": ("INT", {
                     "default": 0,
                     "min": 0,
-                    "max": 0xffffffffffffffff,
+                    "max": 0xffffffff,  # 2^32 - 1, max for numpy.random.seed
                     "tooltip": "Random seed for reproducible results (affects mask visualization colors and model randomness)"
                 }),
             }
         }
 
-    RETURN_TYPES = ("MASK", "BBOX", "STRING", "IMAGE")
-    RETURN_NAMES = ("masks", "bboxes", "labels", "annotated_image")
+    RETURN_TYPES = ("MASK", "BBOX", "STRING", "IMAGE", "STRING")
+    RETURN_NAMES = ("masks", "bboxes", "labels", "annotated_image", "text")
     FUNCTION = "detect"
     CATEGORY = "grounding"
 
     def detect(self, model, image, prompt: str, confidence_threshold: float,
                florence2_max_tokens: int = 1024, florence2_num_beams: int = 3,
+               sa2va_max_tokens: int = 2048, sa2va_num_beams: int = 1,
                seed: int = 0):
         """Universal segmentation detection"""
 
@@ -1514,6 +1614,9 @@ class GroundMaskDetector:
         if model_type == "florence2_seg":
             return self._detect_florence2_seg(model, image, prompt, confidence_threshold,
                                              florence2_max_tokens, florence2_num_beams)
+        elif model_type == "sa2va":
+            return self._detect_sa2va(model, image, prompt, confidence_threshold,
+                                     sa2va_max_tokens, sa2va_num_beams)
         elif model_type == "lisa":
             return self._detect_lisa(model, image, prompt, confidence_threshold)
         elif model_type == "psalm":
@@ -1613,6 +1716,144 @@ class GroundMaskDetector:
         # Format outputs
         return self._format_output(all_masks, all_boxes, all_labels, annotated_images, image.shape)
 
+    def _detect_sa2va(self, model_dict, image, prompt, confidence_threshold,
+                      sa2va_max_tokens, sa2va_num_beams):
+        """Detection using SA2VA vision-language segmentation"""
+        model = model_dict["model"]
+        tokenizer = model_dict["tokenizer"]
+        device = mm.get_torch_device()
+
+        # Configure generation parameters
+        if hasattr(model, 'gen_config'):
+            model.gen_config.max_new_tokens = sa2va_max_tokens
+            model.gen_config.num_beams = sa2va_num_beams
+            model.gen_config.do_sample = False  # Deterministic generation
+
+        batch_size = image.shape[0]
+        all_masks = []
+        all_boxes = []
+        all_labels = []
+        all_texts = []
+        annotated_images = []
+
+        for i in range(batch_size):
+            # Convert ComfyUI tensor to PIL
+            image_np = (image[i].cpu().numpy() * 255).astype(np.uint8)
+            pil_image = Image.fromarray(image_np)
+
+            # Format prompt - SA2VA requires <image> token
+            if '<image>' not in prompt:
+                sa2va_prompt = f"<image>{prompt}"
+            else:
+                sa2va_prompt = prompt
+
+            print(f"🎨 SA2VA inference with prompt: {sa2va_prompt}")
+
+            # Run inference using SA2VA's predict_forward method
+            result = model.predict_forward(
+                image=pil_image,
+                text=sa2va_prompt,
+                tokenizer=tokenizer
+            )
+
+            # Extract masks and prediction text
+            image_masks = []
+            image_boxes = []
+            image_labels = []
+
+            prediction_text = result.get('prediction', '')
+            prediction_masks = result.get('prediction_masks', [])
+
+            print(f"📝 SA2VA prediction: {prediction_text}")
+            print(f"🎭 SA2VA generated {len(prediction_masks)} mask(s)")
+
+            # Store the prediction text
+            all_texts.append(prediction_text)
+
+            # Check if [SEG] token was generated
+            seg_count = prediction_text.count('[SEG]')
+            if seg_count == 0:
+                print("⚠️  WARNING: SA2VA did not generate any [SEG] tokens!")
+                print("💡 TIP: Try prompts like 'Segment the person' or 'Please segment all objects in the image'")
+                print("💡 SA2VA needs explicit segmentation instructions, not just object descriptions")
+
+            if prediction_masks and len(prediction_masks) > 0:
+                for mask_idx, mask in enumerate(prediction_masks):
+                    print(f"  Mask {mask_idx}: Raw shape {mask.shape}, dtype {mask.dtype}")
+
+                    # Handle video masks (take first frame if 3D)
+                    if mask.ndim == 3:
+                        print(f"  Mask {mask_idx}: Video mask, taking first frame")
+                        mask = mask[0]
+
+                    # Convert boolean to float32 if needed
+                    if mask.dtype == bool:
+                        mask = mask.astype(np.float32)
+
+                    # Ensure mask is 2D and has correct shape
+                    if mask.ndim == 1:
+                        # If 1D, try to reshape to image dimensions
+                        h, w = image_np.shape[:2]
+                        if mask.shape[0] == h * w:
+                            mask = mask.reshape(h, w)
+                            print(f"  Mask {mask_idx}: Reshaped from 1D to ({h}, {w})")
+                        else:
+                            print(f"  ⚠️ WARNING: 1D mask size {mask.shape[0]} doesn't match image size {h}x{w}, skipping")
+                            continue
+                    elif mask.ndim > 2:
+                        # Squeeze extra dimensions but ensure we keep 2D
+                        while mask.ndim > 2 and (mask.shape[0] == 1 or mask.shape[-1] == 1):
+                            mask = mask.squeeze()
+                        if mask.ndim != 2:
+                            print(f"  ⚠️ WARNING: Cannot reduce mask to 2D, shape is {mask.shape}, skipping")
+                            continue
+
+                    # Verify mask shape matches image
+                    h, w = image_np.shape[:2]
+                    if mask.shape != (h, w):
+                        print(f"  ⚠️ WARNING: Mask shape {mask.shape} doesn't match image shape ({h}, {w})")
+                        # Try to resize mask to match image using torch
+                        mask_tensor = torch.from_numpy(mask).unsqueeze(0).unsqueeze(0).float()
+                        mask_tensor = torch.nn.functional.interpolate(
+                            mask_tensor,
+                            size=(h, w),
+                            mode='bilinear',
+                            align_corners=False
+                        )
+                        mask = mask_tensor.squeeze().cpu().numpy()
+                        print(f"  Resized mask to {mask.shape}")
+
+                    print(f"  Mask {mask_idx}: Final shape {mask.shape}, dtype {mask.dtype}")
+
+                    # Extract bbox from mask
+                    bbox = self._mask_to_bbox(mask)
+
+                    image_masks.append(mask)
+                    image_boxes.append(bbox)
+
+                    # Parse labels from prediction text
+                    # Count [SEG] tokens to assign labels
+                    seg_count = prediction_text.count('[SEG]')
+                    if mask_idx < seg_count:
+                        # Try to extract object name from context around [SEG] token
+                        label = f"object_{mask_idx}"
+                    else:
+                        label = f"object_{mask_idx}"
+
+                    image_labels.append(label)
+
+            all_masks.append(image_masks)
+            all_boxes.append(image_boxes)
+            all_labels.append(image_labels)
+
+            # Create annotated image
+            annotated_image_np = self._draw_segmentation(image_np, image_masks, image_labels)
+            annotated_tensor = torch.from_numpy(annotated_image_np).float() / 255.0
+            annotated_images.append(annotated_tensor)
+
+        # Format outputs
+        return self._format_output(all_masks, all_boxes, all_labels, annotated_images, image.shape, all_texts)
+
     def _polygon_to_mask(self, polygon, image_shape):
         """Convert polygon coordinates to binary mask"""
         from PIL import Image, ImageDraw
@@ -1666,9 +1907,12 @@ class GroundMaskDetector:
 
         return annotated
 
-    def _format_output(self, all_masks, all_boxes, all_labels, annotated_images, image_shape):
+    def _format_output(self, all_masks, all_boxes, all_labels, annotated_images, image_shape, all_texts=None):
         """Format detection outputs"""
         batch_size = image_shape[0]
+
+        # Format text output
+        text_output = "\n".join(all_texts) if all_texts else ""
 
         # Convert masks to tensor
         max_masks = max(len(masks) for masks in all_masks) if all_masks else 0
@@ -1678,7 +1922,7 @@ class GroundMaskDetector:
             empty_bbox = [[]]
             empty_labels = ""
             annotated_stack = torch.stack(annotated_images, dim=0)
-            return (empty_mask, empty_bbox, empty_labels, annotated_stack)
+            return (empty_mask, empty_bbox, empty_labels, annotated_stack, text_output)
 
         # Stack masks
         mask_list = []
@@ -1707,7 +1951,7 @@ class GroundMaskDetector:
         # Stack annotated images
         annotated_stack = torch.stack(annotated_images, dim=0)
 
-        return (final_masks, all_boxes, labels_str, annotated_stack)
+        return (final_masks, all_boxes, labels_str, annotated_stack, text_output)
 
     def _detect_lisa(self, model_dict, image, prompt, confidence_threshold):
         """LISA detection - placeholder"""
