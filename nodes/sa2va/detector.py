@@ -154,7 +154,9 @@ def detect_sa2va(model_dict, image, prompt, confidence_threshold,
         # Create annotated image
         annotated_image_np = draw_segmentation(image_np, image_masks, image_labels)
         annotated_tensor = torch.from_numpy(annotated_image_np).float() / 255.0
+        # Add batch dimension for ComfyUI IMAGE format (B, H, W, C)
+        annotated_tensor = annotated_tensor.unsqueeze(0)
         annotated_images.append(annotated_tensor)
 
     # Format outputs
-    return format_output_fn(all_masks, all_boxes, all_labels, annotated_images, image.shape, all_texts)
+    return format_output_fn(all_masks, all_boxes, all_labels, annotated_images, all_texts)

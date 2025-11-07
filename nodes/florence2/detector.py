@@ -9,16 +9,17 @@ from ..utils import draw_boxes
 
 
 def detect_florence2(model_dict, image, prompt, box_threshold,
-                     single_box_mode, bbox_output_format, output_masks,
+                     single_box_mode, single_box_per_prompt_mode, bbox_output_format, output_masks,
                      florence2_max_tokens, florence2_num_beams, format_output_fn):
     """Detection using Florence-2
 
     Args:
         model_dict: Dict with model, processor, type, framework
         image: ComfyUI IMAGE tensor (B, H, W, C)
-        prompt: Text prompt string
+        prompt: Text prompt string (period-separated for multiple objects)
         box_threshold: Not used by Florence-2
         single_box_mode: Return only first box
+        single_box_per_prompt_mode: Return highest confidence box per label
         bbox_output_format: Format for bbox output
         output_masks: Whether to output masks from boxes
         florence2_max_tokens: Max tokens for generation
@@ -47,7 +48,8 @@ def detect_florence2(model_dict, image, prompt, box_threshold,
         has_separator = '.' in prompt
         if has_separator:
             text_queries = [c.strip() for c in prompt.split(".") if c.strip()]
-            caption = ". ".join(text_queries)  # Preserve period separator
+            # Format for Florence-2: "phrase1. phrase2. phrase3."
+            caption = ". ".join(text_queries) + "."
         else:
             caption = prompt.strip()
             text_queries = [caption]
@@ -93,11 +95,30 @@ def detect_florence2(model_dict, image, prompt, box_threshold,
         if not has_separator and len(labels) > 0:
             labels = [prompt.strip()] * len(labels)
 
-        # Single box mode
+        # Single box mode (takes precedence)
         if single_box_mode and len(boxes) > 0:
             boxes = boxes[0:1]
             labels = [labels[0]]
             scores = scores[0:1]
+        # Single box per prompt mode (only if single_box_mode is False)
+        elif single_box_per_prompt_mode and len(boxes) > 0:
+            # Group boxes by label and keep highest scoring box per label
+            label_groups = {}
+            for idx, label in enumerate(labels):
+                if label not in label_groups:
+                    label_groups[label] = []
+                label_groups[label].append(idx)
+
+            # Keep highest scoring box for each label
+            keep_indices = []
+            for label, indices in label_groups.items():
+                best_idx = max(indices, key=lambda i: scores[i])
+                keep_indices.append(best_idx)
+
+            keep_indices = sorted(keep_indices)
+            boxes = boxes[keep_indices]
+            labels = [labels[i] for i in keep_indices]
+            scores = scores[keep_indices]
 
         # Draw boxes
         annotated = draw_boxes(pil_image, boxes, labels, scores)
