@@ -33,5 +33,5 @@ DETECTOR_PARAMS = {
 }
 
 # Return types for SA2VA detector
-RETURN_TYPES = ("MASK", "BBOX", "STRING", "IMAGE", "STRING")
-RETURN_NAMES = ("masks", "bboxes", "labels", "annotated_image", "text")
+RETURN_TYPES = ("MASK", "IMAGE", "STRING")
+RETURN_NAMES = ("masks", "overlaid_mask", "text")

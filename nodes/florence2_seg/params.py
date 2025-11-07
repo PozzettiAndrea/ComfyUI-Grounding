@@ -5,9 +5,9 @@ Florence-2 Segmentation model parameters
 # Florence-2 Seg specific loader parameters
 LOADER_PARAMS = {
     "optional": {
-        "florence2_attn": (["eager", "sdpa", "flash_attention_2"], {
+        "florence2_attn": (["auto", "eager", "sdpa", "flash_attention_2"], {
             "default": "eager",
-            "tooltip": "🌸 Florence-2 ONLY! Attention implementation: eager=most compatible, sdpa=PyTorch 2.0+, flash_attention_2=A100/H100"
+            "tooltip": "🌸 Florence-2 ONLY! Attention implementation: auto=automatic selection, eager=most compatible, sdpa=PyTorch 2.0+, flash_attention_2=A100/H100"
         }),
     }
 }
