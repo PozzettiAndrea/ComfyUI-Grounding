@@ -101,7 +101,7 @@ class GroundingDetector:
                 "prompt": ("STRING", {
                     "default": "person . car . dog .",
                     "multiline": True,
-                    "tooltip": "Use periods (.) for GroundingDINO/OWLv2/Florence-2, commas (,) for YOLO-World"
+                    "tooltip": "Period-separated (.) = multiple objects: 'banana. orange' finds bananas AND oranges. Comma or no separator = single object: 'banana, orange' finds items labeled 'banana, orange'"
                 }),
                 "confidence_threshold": ("FLOAT", {
                     "default": 0.3,
@@ -115,6 +115,10 @@ class GroundingDetector:
                 "single_box_mode": ("BOOLEAN", {
                     "default": False,
                     "tooltip": "Return only the highest-scoring detection. Use for referring expressions (e.g., 'the red car on the left')"
+                }),
+                "single_box_per_prompt_mode": ("BOOLEAN", {
+                    "default": False,
+                    "tooltip": "Return highest-scoring detection for each prompt/label (e.g., 'banana. orange' returns best banana and best orange). Ignored if single_box_mode is True"
                 }),
                 "bbox_output_format": (["list_only", "dict_with_data"], {
                     "default": "list_only",
@@ -146,6 +150,7 @@ class GroundingDetector:
 
     def detect(self, model, image, prompt: str, confidence_threshold: float,
                text_threshold: float = 0.25, single_box_mode: bool = False,
+               single_box_per_prompt_mode: bool = False,
                bbox_output_format: str = "list_only", output_masks: bool = False,
                florence2_max_tokens: int = 1024, florence2_num_beams: int = 3,
                yolo_iou: float = 0.45, yolo_agnostic_nms: bool = False, yolo_max_det: int = 300,
@@ -165,23 +170,23 @@ class GroundingDetector:
         if model_type == "grounding_dino":
             return grounding_dino.detect_grounding_dino(
                 model, image, prompt, confidence_threshold, text_threshold,
-                single_box_mode, bbox_output_format, output_masks, self._format_output
+                single_box_mode, single_box_per_prompt_mode, bbox_output_format, output_masks, self._format_output
             )
         elif model_type == "owlv2":
             return owlv2.detect_owlv2(
                 model, image, prompt, confidence_threshold,
-                single_box_mode, bbox_output_format, output_masks, self._format_output
+                single_box_mode, single_box_per_prompt_mode, bbox_output_format, output_masks, self._format_output
             )
         elif model_type == "florence2":
             return florence2.detect_florence2(
                 model, image, prompt, confidence_threshold, single_box_mode,
-                bbox_output_format, output_masks, florence2_max_tokens,
+                single_box_per_prompt_mode, bbox_output_format, output_masks, florence2_max_tokens,
                 florence2_num_beams, self._format_output
             )
         elif model_type == "yolo_world":
             return yolo_world.detect_yolo_world(
                 model, image, prompt, confidence_threshold, single_box_mode,
-                bbox_output_format, output_masks, yolo_iou, yolo_agnostic_nms,
+                single_box_per_prompt_mode, bbox_output_format, output_masks, yolo_iou, yolo_agnostic_nms,
                 yolo_max_det, self._format_output
             )
         else:
@@ -225,7 +230,7 @@ class GroundingDetector:
 # Mask Generation Nodes
 # ============================================================================
 
-class GroundMaskModelLoader:
+class GroundingMaskModelLoader:
     """
     Unified model loader for all mask generation models
     Supports: Florence-2 Seg, SA2VA, LISA, PSALM
@@ -284,7 +289,7 @@ class GroundMaskModelLoader:
         return (model_dict,)
 
 
-class GroundMaskDetector:
+class GroundingMaskDetector:
     """
     Unified detector for mask generation models
     Auto-detects model type and uses appropriate detection method
@@ -310,18 +315,36 @@ class GroundMaskDetector:
                 }),
             },
             "optional": {
-                "single_box_mode": ("BOOLEAN", {
-                    "default": False,
-                    "tooltip": "Return only the highest-scoring detection"
+                # Florence-2 Seg parameters (only used when Florence-2 Seg model is loaded)
+                "florence2_max_tokens": ("INT", {
+                    "default": 1024,
+                    "min": 256,
+                    "max": 4096,
+                    "step": 1,
+                    "tooltip": "[Florence-2 only] Maximum tokens for generation"
                 }),
-                "bbox_output_format": (["list_only", "dict_with_data"], {
-                    "default": "list_only",
-                    "tooltip": "Format for bbox output"
+                "florence2_num_beams": ("INT", {
+                    "default": 3,
+                    "min": 1,
+                    "max": 5,
+                    "step": 1,
+                    "tooltip": "[Florence-2 only] Beam search width"
                 }),
-                # Florence-2 Seg parameters
-                **florence2_seg.params.DETECTOR_PARAMS.get("optional", {}),
-                # SA2VA parameters
-                **sa2va.params.DETECTOR_PARAMS.get("optional", {}),
+                # SA2VA parameters (only used when SA2VA model is loaded)
+                "sa2va_max_tokens": ("INT", {
+                    "default": 2048,
+                    "min": 512,
+                    "max": 8192,
+                    "step": 1,
+                    "tooltip": "[SA2VA only] Maximum tokens for generation"
+                }),
+                "sa2va_num_beams": ("INT", {
+                    "default": 1,
+                    "min": 1,
+                    "max": 5,
+                    "step": 1,
+                    "tooltip": "[SA2VA only] Beam search width"
+                }),
                 "seed": ("INT", {
                     "default": 42,
                     "min": 0,
@@ -337,7 +360,6 @@ class GroundMaskDetector:
     CATEGORY = "grounding"
 
     def detect(self, model, image, prompt: str, confidence_threshold: float,
-               single_box_mode: bool = False, bbox_output_format: str = "list_only",
                florence2_max_tokens: int = 1024, florence2_num_beams: int = 3,
                sa2va_max_tokens: int = 2048, sa2va_num_beams: int = 1,
                seed: int = 0):
@@ -355,8 +377,8 @@ class GroundMaskDetector:
         # Route to appropriate detection method
         if model_type == "florence2_seg":
             return florence2_seg.detect_florence2_seg(
-                model, image, prompt, confidence_threshold, single_box_mode,
-                bbox_output_format, florence2_max_tokens, florence2_num_beams,
+                model, image, prompt, confidence_threshold,
+                florence2_max_tokens, florence2_num_beams,
                 self._format_output
             )
         elif model_type == "sa2va":
@@ -376,17 +398,37 @@ class GroundMaskDetector:
 
         Args:
             masks: List of mask tensors per batch
-            bboxes: List of bboxes per batch
+            bboxes: List of bboxes per batch (not returned, used internally)
             labels_list: List of labels per batch
-            annotated_images: List of annotated image tensors
+            annotated_images: List of overlaid mask images
             text: Generated text output (for SA2VA)
 
         Returns:
-            Tuple of (masks, bboxes, labels_str, annotated_batch, text)
+            Tuple of (masks, labels_str, overlaid_mask, text)
         """
-        # Stack masks
-        if len(masks) > 0:
-            masks_batch = torch.cat(masks, dim=0)
+        # Stack masks - convert from list of lists of numpy arrays to single tensor
+        if len(masks) > 0 and any(len(batch_masks) > 0 for batch_masks in masks):
+            # Flatten list of lists and convert numpy arrays to tensors
+            all_mask_tensors = []
+            for batch_masks in masks:
+                for mask in batch_masks:
+                    if isinstance(mask, np.ndarray):
+                        mask_tensor = torch.from_numpy(mask).float()
+                    else:
+                        mask_tensor = mask
+                    # Ensure 2D mask becomes 3D (1, H, W)
+                    if mask_tensor.ndim == 2:
+                        mask_tensor = mask_tensor.unsqueeze(0)
+                    all_mask_tensors.append(mask_tensor)
+            if len(all_mask_tensors) > 0:
+                masks_batch = torch.cat(all_mask_tensors, dim=0)
+            else:
+                # No masks found, return empty
+                if len(annotated_images) > 0:
+                    _, H, W, _ = annotated_images[0].shape
+                else:
+                    H, W = 512, 512
+                masks_batch = torch.zeros((1, H, W))
         else:
             # Return empty mask
             if len(annotated_images) > 0:
@@ -395,22 +437,13 @@ class GroundMaskDetector:
                 H, W = 512, 512
             masks_batch = torch.zeros((1, H, W))
 
-        # Format bboxes (list_only format for now)
-        batched_bboxes = bboxes
-
-        # Format labels string (from first image)
-        if len(labels_list) > 0 and len(labels_list[0]) > 0:
-            labels_str = ", ".join(labels_list[0])
-        else:
-            labels_str = ""
-
-        # Combine annotated images
+        # Combine overlaid mask images
         if len(annotated_images) > 0:
-            annotated_batch = torch.cat(annotated_images, dim=0)
+            overlaid_mask = torch.cat(annotated_images, dim=0)
         else:
-            annotated_batch = torch.zeros((1, 512, 512, 3))
+            overlaid_mask = torch.zeros((1, 512, 512, 3))
 
-        return (masks_batch, batched_bboxes, labels_str, annotated_batch, text)
+        return (masks_batch, overlaid_mask, text)
 
 
 # ============================================================================
@@ -495,8 +528,8 @@ class BboxVisualizer:
 NODE_CLASS_MAPPINGS = {
     "GroundingModelLoader": GroundingModelLoader,
     "GroundingDetector": GroundingDetector,
-    "GroundMaskModelLoader": GroundMaskModelLoader,
-    "GroundMaskDetector": GroundMaskDetector,
+    "GroundingMaskModelLoader": GroundingMaskModelLoader,
+    "GroundingMaskDetector": GroundingMaskDetector,
     "DownloadAndLoadSAM2Model": DownloadAndLoadSAM2Model,
     "Sam2Segmentation": Sam2Segmentation,
     "BboxVisualizer": BboxVisualizer,
@@ -505,9 +538,9 @@ NODE_CLASS_MAPPINGS = {
 NODE_DISPLAY_NAME_MAPPINGS = {
     "GroundingModelLoader": "Grounding Model Loader",
     "GroundingDetector": "Grounding Detector",
-    "GroundMaskModelLoader": "Mask Model Loader",
-    "GroundMaskDetector": "Mask Detector",
+    "GroundingMaskModelLoader": "Grounding Mask Loader",
+    "GroundingMaskDetector": "Grounding Mask Detector",
     "DownloadAndLoadSAM2Model": "SAM2 Model Loader",
     "Sam2Segmentation": "SAM2 Segmentation",
-    "BboxVisualizer": "Bbox Visualizer",
+    "BboxVisualizer": "Bounding Box Visualizer",
 }

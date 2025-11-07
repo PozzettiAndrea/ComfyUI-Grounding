@@ -43,7 +43,8 @@ def detect_florence2_seg(model_dict, image, prompt, confidence_threshold,
         has_separator = '.' in prompt
         if has_separator:
             text_queries = [c.strip() for c in prompt.split(".") if c.strip()]
-            caption = " ".join(text_queries)
+            # Format for Florence-2: "phrase1. phrase2. phrase3."
+            caption = ". ".join(text_queries) + "."
         else:
             caption = prompt.strip()
             text_queries = [caption]
@@ -108,7 +109,9 @@ def detect_florence2_seg(model_dict, image, prompt, confidence_threshold,
         # Create annotated image
         annotated_image_np = draw_segmentation(image_np, all_masks[i], all_labels[i])
         annotated_tensor = torch.from_numpy(annotated_image_np).float() / 255.0
+        # Add batch dimension for ComfyUI IMAGE format (B, H, W, C)
+        annotated_tensor = annotated_tensor.unsqueeze(0)
         annotated_images.append(annotated_tensor)
 
     # Format outputs (no text output for Florence-2 seg)
-    return format_output_fn(all_masks, all_boxes, all_labels, annotated_images, image.shape, None)
+    return format_output_fn(all_masks, all_boxes, all_labels, annotated_images, None)

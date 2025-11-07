@@ -36,21 +36,4 @@ MASK_MODEL_REGISTRY = {
         "hf_id": "ByteDance/Sa2VA-26B",
         "framework": "transformers",
     },
-    # LISA Reasoning Segmentation models
-    "LISA: 7B-v1": {
-        "type": "lisa",
-        "hf_id": "xinlai/LISA-7B-v1",
-        "framework": "custom",
-    },
-    "LISA: 13B-llama2-v1": {
-        "type": "lisa",
-        "hf_id": "xinlai/LISA-13B-llama2-v1",
-        "framework": "custom",
-    },
-    # PSALM Multi-Task Segmentation
-    "PSALM: 2B": {
-        "type": "psalm",
-        "hf_id": "EnmingZhang/PSALM",
-        "framework": "transformers",
-    },
 }

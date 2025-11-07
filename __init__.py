@@ -15,8 +15,8 @@ from .nodes import (
     BboxVisualizer,
     DownloadAndLoadSAM2Model,
     Sam2Segmentation,
-    GroundMaskModelLoader,
-    GroundMaskDetector,
+    GroundingMaskModelLoader,
+    GroundingMaskDetector,
 )
 
 NODE_CLASS_MAPPINGS = {
@@ -25,8 +25,8 @@ NODE_CLASS_MAPPINGS = {
     "BboxVisualizer": BboxVisualizer,
     "DownloadAndLoadSAM2Model": DownloadAndLoadSAM2Model,
     "Sam2Segmentation": Sam2Segmentation,
-    "GroundMaskModelLoader": GroundMaskModelLoader,
-    "GroundMaskDetector": GroundMaskDetector,
+    "GroundingMaskModelLoader": GroundingMaskModelLoader,
+    "GroundingMaskDetector": GroundingMaskDetector,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -35,8 +35,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "BboxVisualizer": "Bounding Box Visualizer",
     "DownloadAndLoadSAM2Model": "(Down)Load SAM2Model",
     "Sam2Segmentation": "Sam2 Segmentation",
-    "GroundMaskModelLoader": "Ground Mask Model Loader",
-    "GroundMaskDetector": "Ground Mask Detector",
+    "GroundingMaskModelLoader": "Grounding Mask Loader",
+    "GroundingMaskDetector": "Grounding Mask Detector",
 }
 
 # Export web directory for JavaScript extensions

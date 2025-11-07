@@ -139,15 +139,15 @@ app.registerExtension({
             }, 100);
         }
 
-        // Handle GroundMaskModelLoader node
-        if (node.comfyClass === "GroundMaskModelLoader") {
+        // Handle GroundingMaskModelLoader node
+        if (node.comfyClass === "GroundingMaskModelLoader") {
             setTimeout(() => {
                 this.setupMaskModelLoader(node);
             }, 100);
         }
 
-        // Handle GroundMaskDetector node
-        if (node.comfyClass === "GroundMaskDetector") {
+        // Handle GroundingMaskDetector node
+        if (node.comfyClass === "GroundingMaskDetector") {
             setTimeout(() => {
                 this.setupMaskDetector(node);
             }, 100);
@@ -446,7 +446,7 @@ app.registerExtension({
     },
 
     setupMaskModelLoader(node) {
-        log("Setting up GroundMaskModelLoader node");
+        log("Setting up GroundingMaskModelLoader node");
 
         // Find the model widget
         const modelWidget = node.widgets?.find(w => w.name === "model");
@@ -524,13 +524,190 @@ app.registerExtension({
     },
 
     setupMaskDetector(node) {
-        log("Setting up GroundMaskDetector node");
+        log("Setting up GroundingMaskDetector node");
 
-        // For now, mask detector doesn't need dynamic widget management
-        // Florence-2 parameters are always visible since they're the only model type initially
-        // In the future, when LISA/PSALM are added, we can implement similar logic to setupDetector
+        // Find all model-specific parameter widgets
+        const florence2MaxTokensWidget = node.widgets?.find(w => w.name === "florence2_max_tokens");
+        const florence2NumBeamsWidget = node.widgets?.find(w => w.name === "florence2_num_beams");
+        const sa2vaMaxTokensWidget = node.widgets?.find(w => w.name === "sa2va_max_tokens");
+        const sa2vaNumBeamsWidget = node.widgets?.find(w => w.name === "sa2va_num_beams");
 
-        log("GroundMaskDetector setup complete (no dynamic widgets yet)");
+        log("Found mask detector parameter widgets:", {
+            florence2_max_tokens: !!florence2MaxTokensWidget,
+            florence2_num_beams: !!florence2NumBeamsWidget,
+            sa2va_max_tokens: !!sa2vaMaxTokensWidget,
+            sa2va_num_beams: !!sa2vaNumBeamsWidget
+        });
+
+        // Function to update widget visibility based on connected model
+        const updateMaskDetectorWidgets = (modelType) => {
+            log("Updating mask detector widgets for model type:", modelType);
+
+            // Florence-2 Seg parameters
+            if (florence2MaxTokensWidget) {
+                if (modelType === "florence2") {
+                    showWidget(node, florence2MaxTokensWidget);
+                } else {
+                    hideWidget(node, florence2MaxTokensWidget);
+                }
+            }
+
+            if (florence2NumBeamsWidget) {
+                if (modelType === "florence2") {
+                    showWidget(node, florence2NumBeamsWidget);
+                } else {
+                    hideWidget(node, florence2NumBeamsWidget);
+                }
+            }
+
+            // SA2VA parameters
+            if (sa2vaMaxTokensWidget) {
+                if (modelType === "sa2va") {
+                    showWidget(node, sa2vaMaxTokensWidget);
+                } else {
+                    hideWidget(node, sa2vaMaxTokensWidget);
+                }
+            }
+
+            if (sa2vaNumBeamsWidget) {
+                if (modelType === "sa2va") {
+                    showWidget(node, sa2vaNumBeamsWidget);
+                } else {
+                    hideWidget(node, sa2vaNumBeamsWidget);
+                }
+            }
+
+            // Force canvas redraw
+            node.setDirtyCanvas(true, true);
+            if (app.graph) {
+                app.graph.setDirtyCanvas(true, true);
+            }
+
+            requestAnimationFrame(() => {
+                const newSize = node.computeSize();
+                node.setSize([node.size[0], newSize[1]]);
+                node.setDirtyCanvas(true, true);
+                if (app.canvas) {
+                    app.canvas.setDirty(true, true);
+                }
+
+                requestAnimationFrame(() => {
+                    if (app.canvas) {
+                        app.canvas.draw(true, true);
+                    }
+                    log("Mask detector widget visibility update complete");
+                });
+            });
+        };
+
+        // Helper function to detect SA2VA model type
+        const getMaskModelType = (modelName) => {
+            if (modelName.startsWith("Florence-2:")) {
+                return "florence2";
+            }
+            if (modelName.startsWith("SA2VA:")) {
+                return "sa2va";
+            }
+            return "unknown";
+        };
+
+        // Function to get model type from connected mask loader
+        const getConnectedMaskModelType = () => {
+            // Find the model input (slot 0)
+            const modelInput = node.inputs?.find(input => input.name === "model");
+            if (!modelInput || !modelInput.link) {
+                log("No model connected to mask detector");
+                return null;
+            }
+
+            // Get the connected link
+            const link = app.graph.links[modelInput.link];
+            if (!link) {
+                log("Link not found");
+                return null;
+            }
+
+            // Get the connected node (the loader)
+            const loaderNode = app.graph.getNodeById(link.origin_id);
+            if (!loaderNode || loaderNode.comfyClass !== "GroundingMaskModelLoader") {
+                log("Connected node is not a GroundingMaskModelLoader");
+                return null;
+            }
+
+            // Get the model widget value from the loader
+            const loaderModelWidget = loaderNode.widgets?.find(w => w.name === "model");
+            if (!loaderModelWidget) {
+                log("Model widget not found in loader");
+                return null;
+            }
+
+            const selectedModel = loaderModelWidget.value;
+            log("Connected mask loader has model:", selectedModel);
+
+            return getMaskModelType(selectedModel);
+        };
+
+        // Update widgets when a connection is made
+        const origOnConnectionsChange = node.onConnectionsChange;
+        node.onConnectionsChange = function(type, index, connected, link_info) {
+            log("Mask detector connection changed:", type, index, connected);
+
+            if (origOnConnectionsChange) {
+                origOnConnectionsChange.apply(this, arguments);
+            }
+
+            // If model input was connected/disconnected
+            if (type === 1 && index === 0) {  // type 1 = input, index 0 = model input
+                if (connected) {
+                    const modelType = getConnectedMaskModelType();
+                    if (modelType) {
+                        updateMaskDetectorWidgets(modelType);
+                    }
+                } else {
+                    // Disconnected - hide all model-specific widgets
+                    log("Model disconnected, hiding all model-specific widgets");
+                    updateMaskDetectorWidgets("unknown");
+                }
+            }
+        };
+
+        // Check if there's already a connection and update accordingly
+        setTimeout(() => {
+            const modelType = getConnectedMaskModelType();
+            if (modelType) {
+                log("Initial mask detector setup with connected model type:", modelType);
+                updateMaskDetectorWidgets(modelType);
+            } else {
+                log("No initial connection, hiding all model-specific widgets");
+                updateMaskDetectorWidgets("unknown");
+            }
+        }, 150);
+
+        // Also listen for changes in the connected loader's model selection
+        const checkLoaderChanges = setInterval(() => {
+            if (!node.graph) {
+                clearInterval(checkLoaderChanges);
+                return;
+            }
+
+            const modelType = getConnectedMaskModelType();
+            if (modelType && modelType !== node._lastModelType) {
+                log("Detected model type change in connected mask loader:", modelType);
+                node._lastModelType = modelType;
+                updateMaskDetectorWidgets(modelType);
+            }
+        }, 500);
+
+        // Clean up interval when node is removed
+        const origOnRemoved = node.onRemoved;
+        node.onRemoved = function() {
+            clearInterval(checkLoaderChanges);
+            if (origOnRemoved) {
+                origOnRemoved.apply(this, arguments);
+            }
+        };
+
+        log("GroundingMaskDetector setup complete");
     }
 });
 
