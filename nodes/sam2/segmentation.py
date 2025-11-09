@@ -162,9 +162,20 @@ def segment_sam2(image, sam2_model, keep_model_loaded, coordinates_positive=None
                 else:
                     input_box = final_box[i] if i < len(final_box) else final_box[0]
 
+                # Handle point coordinates based on individual_objects mode
+                if individual_objects and coordinates_positive is not None:
+                    point_coords = final_coords[i] if i < len(final_coords) else final_coords[0]
+                    point_labels = final_labels[i] if i < len(final_labels) else final_labels[0]
+                elif coordinates_positive is not None:
+                    point_coords = final_coords
+                    point_labels = final_labels
+                else:
+                    point_coords = None
+                    point_labels = None
+
                 out_masks, scores, logits = model.predict(
-                    point_coords=final_coords if coordinates_positive is not None else None,
-                    point_labels=final_labels if coordinates_positive is not None else None,
+                    point_coords=point_coords,
+                    point_labels=point_labels,
                     box=input_box,
                     multimask_output=True if not individual_objects else False,
                     mask_input=input_mask[i].unsqueeze(0) if mask is not None else None,

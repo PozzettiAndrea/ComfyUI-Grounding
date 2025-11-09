@@ -1,0 +1,403 @@
+{
+  "id": "38945c5c-4e77-4d6c-b916-6a2f0a1b6a89",
+  "revision": 0,
+  "last_node_id": 32,
+  "last_link_id": 39,
+  "nodes": [
+    {
+      "id": 28,
+      "type": "InvertMask",
+      "pos": [
+        98.71468314873522,
+        -76.55255233775446
+      ],
+      "size": [
+        140,
+        26
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 33
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            34
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.67",
+        "Node name for S&R": "InvertMask"
+      }
+    },
+    {
+      "id": 31,
+      "type": "PreviewAny",
+      "pos": [
+        110.50039305540561,
+        281.573065740487
+      ],
+      "size": [
+        140,
+        76
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "source",
+          "type": "*",
+          "link": 37
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.67",
+        "Node name for S&R": "PreviewAny"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 29,
+      "type": "PreviewImage",
+      "pos": [
+        533.6126667407317,
+        103.92480629195937
+      ],
+      "size": [
+        279.1381383513526,
+        299.2129823737602
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 35
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.67",
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 30,
+      "type": "PreviewImage",
+      "pos": [
+        532.7368358026316,
+        -228.9107803208185
+      ],
+      "size": [
+        289.0763407319919,
+        290.26959173790755
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 36
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.67",
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 32,
+      "type": "LoadImagesFromFolderKJ",
+      "pos": [
+        -309.5514298801789,
+        161.68998793772164
+      ],
+      "size": [
+        290.5201171875,
+        262
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            38,
+            39
+          ]
+        },
+        {
+          "name": "mask",
+          "type": "MASK",
+          "links": null
+        },
+        {
+          "name": "count",
+          "type": "INT",
+          "links": null
+        },
+        {
+          "name": "image_path",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-kjnodes",
+        "ver": "1.1.9",
+        "Node name for S&R": "LoadImagesFromFolderKJ"
+      },
+      "widgets_values": [
+        "/workspace/groundingnode/ComfyUI/custom_nodes/ComfyUI-Grounding/assets/tobatch",
+        1024,
+        1024,
+        "pad",
+        0,
+        0,
+        false
+      ]
+    },
+    {
+      "id": 26,
+      "type": "JoinImageWithAlpha",
+      "pos": [
+        259.332162129211,
+        -105.19057150244885
+      ],
+      "size": [
+        176.86484375,
+        46
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 39
+        },
+        {
+          "name": "alpha",
+          "type": "MASK",
+          "link": 34
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            36
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.67",
+        "Node name for S&R": "JoinImageWithAlpha"
+      }
+    },
+    {
+      "id": 19,
+      "type": "GroundingMaskDetector",
+      "pos": [
+        106.9620845129382,
+        -14.471635853967237
+      ],
+      "size": [
+        400,
+        248
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MASK_MODEL",
+          "link": 21
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 38
+        }
+      ],
+      "outputs": [
+        {
+          "name": "masks",
+          "type": "MASK",
+          "links": [
+            33
+          ]
+        },
+        {
+          "name": "overlaid_mask",
+          "type": "IMAGE",
+          "links": [
+            35
+          ]
+        },
+        {
+          "name": "text",
+          "type": "STRING",
+          "links": [
+            37
+          ]
+        }
+      ],
+      "properties": {
+        "aux_id": "PozzettiAndrea/ComfyUI-Grounding",
+        "ver": "a947f4961c39cc150a98738fa83a0494e52f3de0",
+        "Node name for S&R": "GroundingMaskDetector"
+      },
+      "widgets_values": [
+        "segment the main object in the image.",
+        0.3,
+        3,
+        2048,
+        1644266233,
+        "randomize"
+      ]
+    },
+    {
+      "id": 18,
+      "type": "GroundingMaskModelLoader",
+      "pos": [
+        -299.81672209985305,
+        -40.87788547709978
+      ],
+      "size": [
+        270,
+        82
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "model",
+          "type": "MASK_MODEL",
+          "links": [
+            21
+          ]
+        }
+      ],
+      "properties": {
+        "aux_id": "PozzettiAndrea/ComfyUI-Grounding",
+        "ver": "a947f4961c39cc150a98738fa83a0494e52f3de0",
+        "Node name for S&R": "GroundingMaskModelLoader"
+      },
+      "widgets_values": [
+        "SA2VA: 1B",
+        "bf16"
+      ]
+    }
+  ],
+  "links": [
+    [
+      21,
+      18,
+      0,
+      19,
+      0,
+      "MASK_MODEL"
+    ],
+    [
+      33,
+      19,
+      0,
+      28,
+      0,
+      "MASK"
+    ],
+    [
+      34,
+      28,
+      0,
+      26,
+      1,
+      "MASK"
+    ],
+    [
+      35,
+      19,
+      1,
+      29,
+      0,
+      "IMAGE"
+    ],
+    [
+      36,
+      26,
+      0,
+      30,
+      0,
+      "IMAGE"
+    ],
+    [
+      37,
+      19,
+      2,
+      31,
+      0,
+      "*"
+    ],
+    [
+      38,
+      32,
+      0,
+      19,
+      1,
+      "IMAGE"
+    ],
+    [
+      39,
+      32,
+      0,
+      26,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 1.2894499156462411,
+      "offset": [
+        386.94731260454324,
+        226.3186553038392
+      ]
+    },
+    "frontendVersion": "1.28.8"
+  },
+  "version": 0.4
+}

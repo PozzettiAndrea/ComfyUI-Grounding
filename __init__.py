@@ -4,20 +4,32 @@ Supports GroundingDINO, MM-GroundingDINO, OWLv2, Florence-2, and YOLO-World
 Now includes SAM2 segmentation nodes
 """
 
-from .grounding_init import init
+# Only run initialization and imports when loaded by ComfyUI, not during pytest
+# This prevents relative import errors when pytest collects test modules
+import sys
+if 'pytest' not in sys.modules:
+    from .grounding_init import init
+    # Initialize web extensions for compatibility with older ComfyUI versions
+    init()
 
-# Initialize web extensions for compatibility with older ComfyUI versions
-init()
-
-from .nodes import (
-    GroundingModelLoader,
-    GroundingDetector,
-    BboxVisualizer,
-    DownloadAndLoadSAM2Model,
-    Sam2Segmentation,
-    GroundingMaskModelLoader,
-    GroundingMaskDetector,
-)
+    from .nodes import (
+        GroundingModelLoader,
+        GroundingDetector,
+        BboxVisualizer,
+        DownloadAndLoadSAM2Model,
+        Sam2Segmentation,
+        GroundingMaskModelLoader,
+        GroundingMaskDetector,
+    )
+else:
+    # During testing, set dummy values
+    GroundingModelLoader = None
+    GroundingDetector = None
+    BboxVisualizer = None
+    DownloadAndLoadSAM2Model = None
+    Sam2Segmentation = None
+    GroundingMaskModelLoader = None
+    GroundingMaskDetector = None
 
 NODE_CLASS_MAPPINGS = {
     "GroundingModelLoader": GroundingModelLoader,
@@ -35,7 +47,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "BboxVisualizer": "Bounding Box Visualizer",
     "DownloadAndLoadSAM2Model": "(Down)Load SAM2Model",
     "Sam2Segmentation": "Sam2 Segmentation",
-    "GroundingMaskModelLoader": "Grounding Mask Loader",
+    "GroundingMaskModelLoader": "Grounding Mask Model Loader",
     "GroundingMaskDetector": "Grounding Mask Detector",
 }
 
