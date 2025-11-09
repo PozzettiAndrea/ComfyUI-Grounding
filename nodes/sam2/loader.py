@@ -74,7 +74,7 @@ def load_sam2(model, segmentor, device, precision, script_directory):
     version = "2.1" if "2.1" in model else "2.0"
 
     model_cfg_path = next(
-        (os.path.join(script_directory, "nodes", "sam2", "configs", cfg)
+        (os.path.join(script_directory, "nodes", "sam2", "configs", "sam2_configs", cfg)
         for key, cfg in model_mapping[version].items() if key in model),
         None
     )

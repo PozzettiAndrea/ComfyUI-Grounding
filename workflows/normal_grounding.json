@@ -1,0 +1,469 @@
+{
+  "id": "23662dd8-0bfd-4ab0-833e-1775efda6729",
+  "revision": 0,
+  "last_node_id": 17,
+  "last_link_id": 19,
+  "nodes": [
+    {
+      "id": 3,
+      "type": "GroundingModelLoader",
+      "pos": [
+        -324.99609375,
+        -3.8984375
+      ],
+      "size": [
+        270,
+        82
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "model",
+          "type": "GROUNDING_MODEL",
+          "links": [
+            1
+          ]
+        }
+      ],
+      "properties": {
+        "aux_id": "PozzettiAndrea/ComfyUI-Grounding",
+        "ver": "a947f4961c39cc150a98738fa83a0494e52f3de0",
+        "Node name for S&R": "GroundingModelLoader"
+      },
+      "widgets_values": [
+        "Florence-2: Large (0.77B params)",
+        "eager"
+      ]
+    },
+    {
+      "id": 12,
+      "type": "DownloadAndLoadSAM2Model",
+      "pos": [
+        134.1244248881893,
+        -152.4815917189195
+      ],
+      "size": [
+        270,
+        130
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "sam2_model",
+          "type": "SAM2MODEL",
+          "links": [
+            10
+          ]
+        }
+      ],
+      "properties": {
+        "aux_id": "PozzettiAndrea/ComfyUI-Grounding",
+        "ver": "a947f4961c39cc150a98738fa83a0494e52f3de0",
+        "Node name for S&R": "DownloadAndLoadSAM2Model"
+      },
+      "widgets_values": [
+        "sam2.1_hiera_large.safetensors",
+        "single_image",
+        "cuda",
+        "fp16"
+      ]
+    },
+    {
+      "id": 14,
+      "type": "JoinImageWithAlpha",
+      "pos": [
+        806.4560194385198,
+        47.17325913006609
+      ],
+      "size": [
+        176.86484375,
+        46
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 13
+        },
+        {
+          "name": "alpha",
+          "type": "MASK",
+          "link": 17
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            19
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.67",
+        "Node name for S&R": "JoinImageWithAlpha"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 11,
+      "type": "Sam2Segmentation",
+      "pos": [
+        507.4435292430558,
+        34.683721146105555
+      ],
+      "size": [
+        272.087890625,
+        254
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "sam2_model",
+          "type": "SAM2MODEL",
+          "link": 10
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 11
+        },
+        {
+          "name": "coordinates_positive",
+          "shape": 7,
+          "type": "STRING",
+          "link": null
+        },
+        {
+          "name": "coordinates_negative",
+          "shape": 7,
+          "type": "STRING",
+          "link": null
+        },
+        {
+          "name": "bboxes",
+          "shape": 7,
+          "type": "BBOX",
+          "link": 12
+        },
+        {
+          "name": "mask",
+          "shape": 7,
+          "type": "MASK",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "links": [
+            16
+          ]
+        }
+      ],
+      "properties": {
+        "aux_id": "PozzettiAndrea/ComfyUI-Grounding",
+        "ver": "a947f4961c39cc150a98738fa83a0494e52f3de0",
+        "Node name for S&R": "Sam2Segmentation"
+      },
+      "widgets_values": [
+        false,
+        false,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": 1,
+      "type": "GroundingDetector",
+      "pos": [
+        68.70780892432435,
+        37.906621234841865
+      ],
+      "size": [
+        400,
+        364
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "GROUNDING_MODEL",
+          "link": 1
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 8
+        }
+      ],
+      "outputs": [
+        {
+          "name": "bboxes",
+          "type": "BBOX",
+          "links": [
+            12
+          ]
+        },
+        {
+          "name": "annotated_image",
+          "type": "IMAGE",
+          "links": []
+        },
+        {
+          "name": "labels",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "masks",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "aux_id": "PozzettiAndrea/ComfyUI-Grounding",
+        "ver": "a947f4961c39cc150a98738fa83a0494e52f3de0",
+        "Node name for S&R": "GroundingDetector"
+      },
+      "widgets_values": [
+        "main object",
+        0.3,
+        false,
+        true,
+        "list_only",
+        false,
+        2793006679,
+        42,
+        42,
+        "randomize"
+      ]
+    },
+    {
+      "id": 15,
+      "type": "InvertMask",
+      "pos": [
+        634.4085072101292,
+        -31.37835895949953
+      ],
+      "size": [
+        140,
+        26
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 16
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": [
+            17
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.67",
+        "Node name for S&R": "InvertMask"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 9,
+      "type": "LoadImagesFromFolderKJ",
+      "pos": [
+        -319.8692780804565,
+        159.9365003928532
+      ],
+      "size": [
+        290.5201171875,
+        262
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            8,
+            11,
+            13
+          ]
+        },
+        {
+          "name": "mask",
+          "type": "MASK",
+          "links": null
+        },
+        {
+          "name": "count",
+          "type": "INT",
+          "links": null
+        },
+        {
+          "name": "image_path",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-kjnodes",
+        "ver": "1.1.9",
+        "Node name for S&R": "LoadImagesFromFolderKJ"
+      },
+      "widgets_values": [
+        "/workspace/groundingnode/ComfyUI/custom_nodes/ComfyUI-Grounding/assets/tobatch/",
+        1024,
+        1024,
+        "pad",
+        0,
+        0,
+        false
+      ]
+    },
+    {
+      "id": 17,
+      "type": "PreviewImage",
+      "pos": [
+        1001.6651677560029,
+        55.417983277011885
+      ],
+      "size": [
+        330.90445054815405,
+        258
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 19
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.67",
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    }
+  ],
+  "links": [
+    [
+      1,
+      3,
+      0,
+      1,
+      0,
+      "GROUNDING_MODEL"
+    ],
+    [
+      8,
+      9,
+      0,
+      1,
+      1,
+      "IMAGE"
+    ],
+    [
+      10,
+      12,
+      0,
+      11,
+      0,
+      "SAM2MODEL"
+    ],
+    [
+      11,
+      9,
+      0,
+      11,
+      1,
+      "IMAGE"
+    ],
+    [
+      12,
+      1,
+      0,
+      11,
+      4,
+      "BBOX"
+    ],
+    [
+      13,
+      9,
+      0,
+      14,
+      0,
+      "IMAGE"
+    ],
+    [
+      16,
+      11,
+      0,
+      15,
+      0,
+      "MASK"
+    ],
+    [
+      17,
+      15,
+      0,
+      14,
+      1,
+      "MASK"
+    ],
+    [
+      19,
+      14,
+      0,
+      17,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.9278994587027772,
+      "offset": [
+        508.01216790085954,
+        282.0476732486773
+      ]
+    },
+    "frontendVersion": "1.28.8"
+  },
+  "version": 0.4
+}
