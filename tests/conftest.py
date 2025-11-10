@@ -61,6 +61,40 @@ mock_grounding_init = type("grounding_init", (), {})()
 mock_grounding_init.init = lambda: None
 sys.modules["grounding_init"] = mock_grounding_init
 
+# Mock flash_attn module for SA2VA tests (SA2VA requires flash_attn imports)
+# This mock allows transformers to validate imports without actually installing flash_attn
+import importlib.util
+import importlib.machinery
+
+# Create a proper module spec so transformers recognizes it as a real package
+mock_flash_attn_spec = importlib.machinery.ModuleSpec("flash_attn", None, is_package=True)
+mock_flash_attn = type("flash_attn", (), {})()
+mock_flash_attn.__spec__ = mock_flash_attn_spec
+mock_flash_attn.__name__ = "flash_attn"
+mock_flash_attn.__package__ = "flash_attn"
+
+mock_flash_attn_interface_spec = importlib.machinery.ModuleSpec("flash_attn.flash_attn_interface", None)
+mock_flash_attn_interface = type("flash_attn_interface", (), {})()
+mock_flash_attn_interface.__spec__ = mock_flash_attn_interface_spec
+mock_flash_attn_interface.__name__ = "flash_attn.flash_attn_interface"
+mock_flash_attn_interface.__package__ = "flash_attn"
+
+# Mock the functions that SA2VA's flash_attention.py tries to import
+# These won't actually be called since we use attn_implementation="eager"
+def _mock_flash_attn_func(*args, **kwargs):
+    """Dummy flash attention function - should not be called"""
+    raise NotImplementedError("Flash attention mock called - this should not happen with eager attention")
+
+mock_flash_attn_interface.flash_attn_unpadded_qkvpacked_func = _mock_flash_attn_func  # v1
+mock_flash_attn_interface.flash_attn_varlen_qkvpacked_func = _mock_flash_attn_func  # v2
+mock_flash_attn_interface.flash_attn_varlen_func = _mock_flash_attn_func  # Additional function
+mock_flash_attn_interface.flash_attn_func = _mock_flash_attn_func  # Base function
+
+mock_flash_attn.flash_attn_interface = mock_flash_attn_interface
+
+sys.modules["flash_attn"] = mock_flash_attn
+sys.modules["flash_attn.flash_attn_interface"] = mock_flash_attn_interface
+
 
 def pytest_ignore_collect(collection_path, path, config):
     """Ignore __init__.py files during collection"""

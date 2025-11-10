@@ -4,7 +4,7 @@
 
 ![Simple Workflow](docs/simple.png)
 
-🎯 **3 Nodes Total** - Loader → Detector → Visualizer
+🎯 **8 Nodes Total** - 2 Loaders + 2 Detectors + 2 SAM2 + 2 Utilities
 
 🚀 **5 Model Families** - GroundingDINO, MM-GroundingDINO, OWLv2, Florence-2, YOLO-World
 
@@ -25,8 +25,9 @@ pip install -r requirements.txt
 
 ## The Nodes
 
+### Detection Nodes
 
-### 1. Grounding Model Loader
+#### 1. Grounding Model Loader
 Load any of 15+ models from a single dropdown.
 
 <div style="font-size: 0.75em; line-height: 1.4;">
@@ -52,8 +53,8 @@ Load any of 15+ models from a single dropdown.
   19. YOLO-World: v8x (Extra Large) - yolov8x-worldv2.pt
 </div>
 
-### 2. Grounding Detector
-Universal detector for all models.
+#### 2. Grounding Detector
+Universal detector for all models with bbox/mask output.
 
 #### Key Features
 
@@ -81,25 +82,64 @@ Universal detector for all models.
 - `flash_attention_2` - Fastest on A100/H100
 </div>
 
-### 3. Bounding Box Visualizer
+### Mask Generation Nodes
+
+#### 3. Grounding Mask Loader
 <div style="font-size: 0.9em; line-height: 1.4;">
 
-Re-draw bboxes on images with custom line width. Optional since detector already returns annotated images.
+Load mask generation models:
+- Florence-2 Seg (Base/Large) - Direct segmentation masks
+- SA2VA (1B/4B/8B/26B) - Visual grounding with text output
 </div>
 
-### 4. SAM2 Integration
-
+#### 4. Grounding Mask Detector
 <div style="font-size: 0.9em; line-height: 1.4;">
 
-**DownloadAndLoadSAM2Model** - Load SAM2 models (base/large/small/tiny)
-**Sam2Segmentation** - Segment using bboxes from grounding models or point coordinates
+Direct mask generation from text prompts. Outputs masks, overlaid images, and generated text descriptions.
+</div>
 
+### SAM2 Segmentation Nodes
+
+#### 5. Download and Load SAM2 Model
+<div style="font-size: 0.9em; line-height: 1.4;">
+
+Load SAM2 models (base/large/small/tiny) for high-quality segmentation.
+</div>
+
+#### 6. SAM2 Segmentation
+<div style="font-size: 0.9em; line-height: 1.4;">
+
+Segment using bboxes from grounding models or point coordinates.
 - Supports batch processing
 - Models cached in memory for instant reload
 - Compatible with all grounding model outputs
 </div>
 
-### Tips
+### Utility Nodes
+
+#### 7. Bounding Box Visualizer
+<div style="font-size: 0.9em; line-height: 1.4;">
+
+Re-draw bboxes on images with custom line width. Optional since detector already returns annotated images.
+</div>
+
+#### 8. Batch Crop and Pad From Mask
+<div style="font-size: 0.9em; line-height: 1.4;">
+
+Crops images to mask bounding boxes and pads them to uniform size for batch processing.
+</div>
+
+## Example Workflows
+
+Three ready-to-use workflows in `/workflows/`:
+
+- **normal_grounding.json** - Object detection + SAM2 segmentation pipeline
+- **batch_normal_grounding.json** - Batch version for processing multiple images
+- **mask_grounding.json** - Direct mask generation using SA2VA (faster for segmentation)
+
+Load these in ComfyUI to see the nodes in action.
+
+## Tips
 
 **Prompt Format:**
 - Use periods for multiple labels → `"laser. crocodile."`
