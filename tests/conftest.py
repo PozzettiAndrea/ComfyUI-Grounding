@@ -121,9 +121,65 @@ def _mock_tensor_to(self, *args, **kwargs):
             return _original_tensor_to(self, *new_args, **kwargs)
         return _original_tensor_to(self, *args, **kwargs)
 
+# Mock torch factory functions to redirect CUDA device to CPU
+_original_torch_full = torch.full
+_original_torch_zeros = torch.zeros
+_original_torch_ones = torch.ones
+_original_torch_empty = torch.empty
+_original_torch_randn = torch.randn
+_original_torch_rand = torch.rand
+
+def _redirect_device_if_cuda(kwargs):
+    """Helper to redirect CUDA device to CPU in kwargs"""
+    if 'device' in kwargs:
+        device = kwargs['device']
+        if isinstance(device, str) and 'cuda' in device.lower():
+            kwargs['device'] = 'cpu'
+        elif isinstance(device, torch.device) and device.type == 'cuda':
+            kwargs['device'] = torch.device('cpu')
+    return kwargs
+
+def _mock_torch_full(*args, **kwargs):
+    if not torch.cuda.is_available():
+        kwargs = _redirect_device_if_cuda(kwargs)
+    return _original_torch_full(*args, **kwargs)
+
+def _mock_torch_zeros(*args, **kwargs):
+    if not torch.cuda.is_available():
+        kwargs = _redirect_device_if_cuda(kwargs)
+    return _original_torch_zeros(*args, **kwargs)
+
+def _mock_torch_ones(*args, **kwargs):
+    if not torch.cuda.is_available():
+        kwargs = _redirect_device_if_cuda(kwargs)
+    return _original_torch_ones(*args, **kwargs)
+
+def _mock_torch_empty(*args, **kwargs):
+    if not torch.cuda.is_available():
+        kwargs = _redirect_device_if_cuda(kwargs)
+    return _original_torch_empty(*args, **kwargs)
+
+def _mock_torch_randn(*args, **kwargs):
+    if not torch.cuda.is_available():
+        kwargs = _redirect_device_if_cuda(kwargs)
+    return _original_torch_randn(*args, **kwargs)
+
+def _mock_torch_rand(*args, **kwargs):
+    if not torch.cuda.is_available():
+        kwargs = _redirect_device_if_cuda(kwargs)
+    return _original_torch_rand(*args, **kwargs)
+
 # Patch torch.Tensor methods
 torch.Tensor.cuda = _mock_tensor_cuda
 torch.Tensor.to = _mock_tensor_to
+
+# Patch torch factory functions
+torch.full = _mock_torch_full
+torch.zeros = _mock_torch_zeros
+torch.ones = _mock_torch_ones
+torch.empty = _mock_torch_empty
+torch.randn = _mock_torch_randn
+torch.rand = _mock_torch_rand
 
 
 def pytest_ignore_collect(collection_path, path, config):
