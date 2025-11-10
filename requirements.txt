@@ -22,6 +22,6 @@ pyyaml>=6.0
 tqdm>=4.65.0
 
 # For flash attention (optional for SA2VA performance)
-# torch>=2.0.0  # Usually provided by ComfyUI - uncomment if needed
+torch<=2.8.0
 torchvision
 # flash_attn  # Optional - improves SA2VA inference speed but not required
