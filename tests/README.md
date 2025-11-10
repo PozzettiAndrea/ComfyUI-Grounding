@@ -19,15 +19,14 @@ pytest tests/integration_real/ -v -m real_model --use-gpu
 
 ## Test List
 
-### Unit Tests (6 tests)
+### Unit Tests (5 tests)
 - `test_node_registration.py` - Node class registration
 - `test_model_registry.py` - Model registry validation
 - `test_input_validation.py` - Input validation
 - `test_cache.py` - Model caching
 - `test_conversions.py` - Format conversions
-- `test_drawing.py` - Bounding box drawing
 
-### Real Model Tests (16 tests)
+### Real Model Tests (18 tests)
 
 **Florence-2** (7 tests)
 - Load with eager attention
@@ -52,3 +51,7 @@ pytest tests/integration_real/ -v -m real_model --use-gpu
 - Load v8s model
 - Detection
 - Model caching
+
+**SA2VA** (2 tests)
+- Load 1B model
+- Segmentation with text output
