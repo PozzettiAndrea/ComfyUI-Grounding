@@ -6,18 +6,36 @@ import folder_paths
 import comfy.model_management as mm
 
 
-def load_florence2(model_name, config, florence2_attn="eager"):
+# Store original get_imports before any patching
+from transformers.dynamic_module_utils import get_imports as _original_get_imports
+
+
+def fixed_get_imports(filename):
+    """Patch to remove flash_attn import requirement from Florence-2"""
+    if not str(filename).endswith("modeling_florence2.py"):
+        return _original_get_imports(filename)
+
+    imports = _original_get_imports(filename)
+    try:
+        imports.remove("flash_attn")
+    except ValueError:
+        pass  # flash_attn not in imports
+
+    return imports
+
+
+def load_florence2(model_name, config):
     """Load Florence-2 for bbox detection
 
     Args:
         model_name: Model display name
         config: Model configuration dict from registry
-        florence2_attn: Attention implementation
 
     Returns:
         Dict containing model, processor, type, and framework
     """
     from transformers import AutoProcessor, AutoModelForCausalLM
+    from unittest.mock import patch
 
     hf_id = config["hf_id"]
     device = mm.get_torch_device()
@@ -25,15 +43,23 @@ def load_florence2(model_name, config, florence2_attn="eager"):
     os.makedirs(cache_dir, exist_ok=True)
 
     print(f"📦 Loading Florence-2 Model: {model_name}")
-    print(f"Using Florence-2 attention implementation: {florence2_attn}")
 
-    processor = AutoProcessor.from_pretrained(hf_id, cache_dir=cache_dir, trust_remote_code=True)
-    model = AutoModelForCausalLM.from_pretrained(
+    # Processor needs trust_remote_code for custom attributes like image_token
+    processor = AutoProcessor.from_pretrained(
         hf_id,
         cache_dir=cache_dir,
-        trust_remote_code=True,
-        attn_implementation=florence2_attn
+        trust_remote_code=True
     )
+
+    # Load model with patched get_imports (removes flash_attn requirement)
+    # Note: Florence-2 uses eager attention only due to _supports_sdpa bug in transformers 4.50+
+    with patch("transformers.dynamic_module_utils.get_imports", fixed_get_imports):
+        model = AutoModelForCausalLM.from_pretrained(
+            hf_id,
+            cache_dir=cache_dir,
+            trust_remote_code=True,
+            attn_implementation="eager"
+        )
 
     model.to(device)
     model.eval()

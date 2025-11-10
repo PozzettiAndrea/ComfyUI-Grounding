@@ -104,8 +104,22 @@ def mock_comfy_environment():
 
 @pytest.fixture
 def small_image():
-    """Create a small test image tensor for faster tests"""
-    return torch.rand(1, 224, 224, 3)
+    """Load plantpot.png test image"""
+    from PIL import Image
+    import numpy as np
+
+    # Load the test image
+    img_path = Path(__file__).parent.parent / "assets" / "plantpot.png"
+    img = Image.open(img_path).convert("RGB")
+
+    # Resize to reasonable size for testing (keeping aspect ratio)
+    img.thumbnail((512, 512), Image.Resampling.LANCZOS)
+
+    # Convert to torch tensor in format (1, H, W, C) with values in [0, 1]
+    img_np = np.array(img).astype(np.float32) / 255.0
+    img_tensor = torch.from_numpy(img_np).unsqueeze(0)
+
+    return img_tensor
 
 
 @pytest.fixture(autouse=True)
