@@ -60,6 +60,17 @@ jobs:
         echo "## Real Model Test Results" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "Real model tests completed. Check logs above for detailed results." >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Visual test outputs have been uploaded as artifacts (if available)." >> $GITHUB_STEP_SUMMARY
+
+    - name: Upload test visual outputs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-visual-outputs
+        path: tests/test_outputs/*.png
+        retention-days: 30
+        if-no-files-found: ignore
 
     - name: Upload test artifacts
       if: failure()
@@ -68,4 +79,5 @@ jobs:
         name: test-failures
         path: |
           pytest-results/
+          tests/test_outputs/
           *.log
