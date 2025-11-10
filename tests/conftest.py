@@ -95,6 +95,21 @@ mock_flash_attn.flash_attn_interface = mock_flash_attn_interface
 sys.modules["flash_attn"] = mock_flash_attn
 sys.modules["flash_attn.flash_attn_interface"] = mock_flash_attn_interface
 
+# Mock torch.cuda() calls for SA2VA (SA2VA has hardcoded .cuda() calls in model code)
+# This allows tests to run on CPU by making .cuda() calls no-ops
+_original_tensor_cuda = torch.Tensor.cuda
+
+def _mock_tensor_cuda(self, device=None, non_blocking=False):
+    """Mock .cuda() to return CPU tensor when CUDA is not available"""
+    if torch.cuda.is_available():
+        return _original_tensor_cuda(self, device=device, non_blocking=non_blocking)
+    else:
+        # Return CPU tensor instead of failing
+        return self
+
+# Patch torch.Tensor.cuda method
+torch.Tensor.cuda = _mock_tensor_cuda
+
 
 def pytest_ignore_collect(collection_path, path, config):
     """Ignore __init__.py files during collection"""
