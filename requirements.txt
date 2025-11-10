@@ -25,4 +25,5 @@ tqdm>=4.65.0
 # For flash attention (optional for SA2VA performance)
 torch<=2.8.0
 torchvision
+torchaudio
 # flash_attn  # Optional - improves SA2VA inference speed but not required
