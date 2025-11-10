@@ -81,6 +81,11 @@ def load_sa2va(model_name, config, sa2va_dtype="auto"):
         trust_remote_code=True  # Required for SA2VA custom code
     )
 
+    # Ensure all model parameters are float32 on CPU to avoid dtype mismatches
+    if not torch.cuda.is_available() and torch_dtype == torch.float32:
+        model = model.float()
+        print(f"✅ Converted all model parameters to float32 for CPU")
+
     model.eval()
 
     print(f"✅ Successfully loaded {model_name}")
