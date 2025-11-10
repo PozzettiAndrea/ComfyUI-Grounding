@@ -8,7 +8,7 @@ timm>=0.9.0
 ultralytics>=8.2.0
 hf_transfer
 peft
-flash_attn
+# flash_attn  # Optional - improves SA2VA performance but not required
 
 # Image processing (usually already installed with ComfyUI)
 # pillow>=10.0.0
@@ -21,7 +21,7 @@ huggingface_hub>=0.20.0
 pyyaml>=6.0
 tqdm>=4.65.0
 
-# For flash attention
+# For flash attention (optional for SA2VA performance)
 # torch>=2.0.0  # Usually provided by ComfyUI - uncomment if needed
 torchvision
-flash_attn
+# flash_attn  # Optional - improves SA2VA inference speed but not required
