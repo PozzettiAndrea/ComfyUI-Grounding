@@ -116,7 +116,7 @@ def _mock_tensor_to(self, *args, **kwargs):
         # Check if trying to move to CUDA device
         if args and (isinstance(args[0], str) and 'cuda' in args[0].lower() or
                      isinstance(args[0], torch.device) and args[0].type == 'cuda'):
-            # Redirect to CPU
+            # Redirect to CPU (keep the dtype)
             new_args = (torch.device('cpu'),) + args[1:]
             return _original_tensor_to(self, *new_args, **kwargs)
         return _original_tensor_to(self, *args, **kwargs)
