@@ -2,9 +2,9 @@ name: Code Quality (Lint)
 
 on:
   pull_request:
-    branches: [main, master, develop]
+    branches: [main, master, dev]
   push:
-    branches: [main, master, develop]
+    branches: [main, master, dev]
 
 jobs:
   lint:
