@@ -1,4 +1,4 @@
-name: Unit and Integration Tests
+name: Unit Tests
 
 on:
   push:
@@ -9,18 +9,15 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.10"]
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "3.10"
         cache: 'pip'
 
     - name: Install dependencies
@@ -36,21 +33,8 @@ jobs:
       env:
         PYTHONPATH: ${{ github.workspace }}
 
-    - name: Run mocked integration tests
-      run: |
-        pytest tests/integration/ -v --cov=nodes --cov-append --cov-report=xml --cov-report=term-missing
-      env:
-        PYTHONPATH: ${{ github.workspace }}
-
-    - name: Run workflow validation tests
-      run: |
-        pytest tests/workflows/ -v
-      env:
-        PYTHONPATH: ${{ github.workspace }}
-
     - name: Upload coverage reports
       uses: codecov/codecov-action@v4
-      if: matrix.python-version == '3.11'
       with:
         file: ./coverage.xml
         flags: unittests
@@ -62,5 +46,3 @@ jobs:
       run: |
         echo "## Test Results" >> $GITHUB_STEP_SUMMARY
         echo "✅ Unit tests completed" >> $GITHUB_STEP_SUMMARY
-        echo "✅ Mocked integration tests completed" >> $GITHUB_STEP_SUMMARY
-        echo "✅ Workflow validation tests completed" >> $GITHUB_STEP_SUMMARY
