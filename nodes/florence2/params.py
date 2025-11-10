@@ -3,13 +3,9 @@ Florence-2 bbox detection model parameters
 """
 
 # Florence-2 bbox specific loader parameters
+# Note: SDPA is disabled due to _supports_sdpa bug in transformers 4.50+
 LOADER_PARAMS = {
-    "optional": {
-        "florence2_attn": (["auto", "eager", "sdpa", "flash_attention_2"], {
-            "default": "eager",
-            "tooltip": "🌸 Florence-2 ONLY! Attention implementation: auto=automatic selection, eager=most compatible, sdpa=PyTorch 2.0+, flash_attention_2=A100/H100"
-        }),
-    }
+    "optional": {}
 }
 
 # Florence-2 bbox specific detector parameters
