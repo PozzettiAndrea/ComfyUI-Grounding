@@ -43,30 +43,14 @@ def load_sa2va(model_name, config, sa2va_dtype="auto"):
     print(f"📂 Cache directory: {cache_dir}")
     print(f"⚠️  IMPORTANT: trust_remote_code=True is required for SA2VA")
 
-    # Try loading with flash_attn first for better performance
-    try:
-        print(f"⚡ Attempting to load with flash_attn for faster inference...")
-        model = AutoModelForCausalLM.from_pretrained(
-            hf_id,
-            torch_dtype=torch_dtype,
-            device_map=device,
-            cache_dir=cache_dir,
-            trust_remote_code=True,  # Required for SA2VA custom code
-            attn_implementation="flash_attention_2"  # Use flash_attn if available
-        )
-        print(f"✅ Flash attention enabled for SA2VA")
-    except (ImportError, Exception) as e:
-        # Fallback to eager attention (no flash_attn required)
-        print(f"⚠️  Flash attention not available ({str(e)[:50]}...)")
-        print(f"⚡ Loading SA2VA with eager attention (slower but functional)")
-        model = AutoModelForCausalLM.from_pretrained(
-            hf_id,
-            torch_dtype=torch_dtype,
-            device_map=device,
-            cache_dir=cache_dir,
-            trust_remote_code=True,  # Required for SA2VA custom code
-            attn_implementation="eager"  # Use standard PyTorch attention
-        )
+    # Load model
+    model = AutoModelForCausalLM.from_pretrained(
+        hf_id,
+        torch_dtype=torch_dtype,
+        device_map=device,
+        cache_dir=cache_dir,
+        trust_remote_code=True  # Required for SA2VA custom code
+    )
 
     # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(
