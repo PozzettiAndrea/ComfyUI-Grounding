@@ -280,8 +280,10 @@
       "widgets_values": [
         "segment the main object in the image.",
         0.3,
+        1024,
         3,
         2048,
+        1,
         42,
         "fixed"
       ]
