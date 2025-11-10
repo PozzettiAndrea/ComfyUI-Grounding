@@ -7,6 +7,7 @@ import torch
 
 
 @pytest.mark.real_model
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="SA2VA requires CUDA due to dtype handling issues on CPU")
 def test_sa2va_1b_load(mock_comfy_environment):
     """Test loading real SA2VA 1B model"""
     from nodes import GroundingMaskModelLoader
@@ -33,6 +34,7 @@ def test_sa2va_1b_load(mock_comfy_environment):
 
 
 @pytest.mark.real_model
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="SA2VA requires CUDA due to dtype handling issues on CPU")
 def test_sa2va_1b_segmentation(mock_comfy_environment, small_image):
     """Test real segmentation with SA2VA 1B model"""
     from nodes import GroundingMaskModelLoader, GroundingMaskDetector
