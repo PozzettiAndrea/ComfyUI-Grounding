@@ -39,12 +39,6 @@ def load_sa2va(model_name, config, sa2va_dtype="auto"):
     }
     torch_dtype = dtype_map.get(sa2va_dtype, "auto")
 
-    # Force float32 on CPU to avoid dtype mismatches
-    # SA2VA with "auto" uses bfloat16 on GPU but this causes issues on CPU
-    if torch_dtype == "auto" and not torch.cuda.is_available():
-        torch_dtype = torch.float32
-        print(f"⚙️  Forcing float32 dtype for CPU compatibility")
-
     print(f"📥 Loading model from HuggingFace ({hf_id})...")
     print(f"📂 Cache directory: {cache_dir}")
     print(f"⚠️  IMPORTANT: trust_remote_code=True is required for SA2VA")
@@ -80,11 +74,6 @@ def load_sa2va(model_name, config, sa2va_dtype="auto"):
         cache_dir=cache_dir,
         trust_remote_code=True  # Required for SA2VA custom code
     )
-
-    # Ensure all model parameters are float32 on CPU to avoid dtype mismatches
-    if not torch.cuda.is_available() and torch_dtype == torch.float32:
-        model = model.float()
-        print(f"✅ Converted all model parameters to float32 for CPU")
 
     model.eval()
 
