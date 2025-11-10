@@ -95,9 +95,10 @@ mock_flash_attn.flash_attn_interface = mock_flash_attn_interface
 sys.modules["flash_attn"] = mock_flash_attn
 sys.modules["flash_attn.flash_attn_interface"] = mock_flash_attn_interface
 
-# Mock torch.cuda() calls for SA2VA (SA2VA has hardcoded .cuda() calls in model code)
-# This allows tests to run on CPU by making .cuda() calls no-ops
+# Mock torch.cuda() and .to() calls for SA2VA (SA2VA has hardcoded CUDA calls in model code)
+# This allows tests to run on CPU by making CUDA calls redirect to CPU
 _original_tensor_cuda = torch.Tensor.cuda
+_original_tensor_to = torch.Tensor.to
 
 def _mock_tensor_cuda(self, device=None, non_blocking=False):
     """Mock .cuda() to return CPU tensor when CUDA is not available"""
@@ -107,8 +108,22 @@ def _mock_tensor_cuda(self, device=None, non_blocking=False):
         # Return CPU tensor instead of failing
         return self
 
-# Patch torch.Tensor.cuda method
+def _mock_tensor_to(self, *args, **kwargs):
+    """Mock .to() to redirect CUDA device requests to CPU when CUDA is not available"""
+    if torch.cuda.is_available():
+        return _original_tensor_to(self, *args, **kwargs)
+    else:
+        # Check if trying to move to CUDA device
+        if args and (isinstance(args[0], str) and 'cuda' in args[0].lower() or
+                     isinstance(args[0], torch.device) and args[0].type == 'cuda'):
+            # Redirect to CPU
+            new_args = (torch.device('cpu'),) + args[1:]
+            return _original_tensor_to(self, *new_args, **kwargs)
+        return _original_tensor_to(self, *args, **kwargs)
+
+# Patch torch.Tensor methods
 torch.Tensor.cuda = _mock_tensor_cuda
+torch.Tensor.to = _mock_tensor_to
 
 
 def pytest_ignore_collect(collection_path, path, config):
