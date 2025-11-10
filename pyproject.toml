@@ -18,9 +18,8 @@ dependencies = [
     "hf_transfer",
     "huggingface_hub>=0.20.0",
 
-    # For fine-tuning and flash attention
+    # For fine-tuning
     "peft",
-    "flash_attn",
 
     # Configuration and utilities
     "pyyaml>=6.0",
