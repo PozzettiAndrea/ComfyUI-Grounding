@@ -8,9 +8,9 @@ on:
   # Allow manual trigger
   workflow_dispatch:
 
-  # Optionally run on specific branches (commented out to save resources)
-  # push:
-  #   branches: [main]
+  # Run on push to main branches
+  push:
+    branches: [main, master, dev]
 
 jobs:
   test-real-models:
@@ -63,12 +63,7 @@ jobs:
       run: |
         echo "## Real Model Test Results" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "✅ GroundingDINO SwinT tests completed" >> $GITHUB_STEP_SUMMARY
-        echo "✅ Florence-2 Base tests completed" >> $GITHUB_STEP_SUMMARY
-        echo "✅ OWLv2 Base tests completed" >> $GITHUB_STEP_SUMMARY
-        echo "✅ YOLO-World v2 S tests completed" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Note**: SAM2 tests were skipped as requested" >> $GITHUB_STEP_SUMMARY
+        echo "Real model tests completed. Check logs above for detailed results." >> $GITHUB_STEP_SUMMARY
 
     - name: Upload test artifacts
       if: failure()
