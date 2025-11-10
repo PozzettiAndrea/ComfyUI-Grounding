@@ -173,7 +173,7 @@
         "Node name for S&R": "LoadImagesFromFolderKJ"
       },
       "widgets_values": [
-        "/workspace/groundingnode/ComfyUI/custom_nodes/ComfyUI-Grounding/assets/tobatch",
+        "input/tobatch",
         1024,
         1024,
         "pad",
