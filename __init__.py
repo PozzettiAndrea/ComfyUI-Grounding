@@ -20,6 +20,7 @@ if 'pytest' not in sys.modules:
         Sam2Segmentation,
         GroundingMaskModelLoader,
         GroundingMaskDetector,
+        BatchCropAndPadFromMask,
     )
 else:
     # During testing, set dummy values
@@ -30,6 +31,7 @@ else:
     Sam2Segmentation = None
     GroundingMaskModelLoader = None
     GroundingMaskDetector = None
+    BatchCropAndPadFromMask = None
 
 NODE_CLASS_MAPPINGS = {
     "GroundingModelLoader": GroundingModelLoader,
@@ -39,6 +41,7 @@ NODE_CLASS_MAPPINGS = {
     "Sam2Segmentation": Sam2Segmentation,
     "GroundingMaskModelLoader": GroundingMaskModelLoader,
     "GroundingMaskDetector": GroundingMaskDetector,
+    "BatchCropAndPadFromMask": BatchCropAndPadFromMask,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -49,6 +52,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "Sam2Segmentation": "Sam2 Segmentation",
     "GroundingMaskModelLoader": "Grounding Mask Model Loader",
     "GroundingMaskDetector": "Grounding Mask Detector",
+    "BatchCropAndPadFromMask": "Batch Crop and Pad From Mask",
 }
 
 # Export web directory for JavaScript extensions

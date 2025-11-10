@@ -276,6 +276,7 @@ app.registerExtension({
             // GroundingDINO parameters (text_threshold)
             if (textThresholdWidget) {
                 if (modelType === "grounding_dino") {
+                    textThresholdWidget.value = 0.25;  // Reset to default
                     showWidget(node, textThresholdWidget);
                 } else {
                     hideWidget(node, textThresholdWidget);
@@ -285,6 +286,7 @@ app.registerExtension({
             // Florence-2 parameters (inference-time only)
             if (florence2MaxTokensWidget) {
                 if (modelType === "florence2") {
+                    florence2MaxTokensWidget.value = 1024;  // Reset to default
                     showWidget(node, florence2MaxTokensWidget);
                 } else {
                     hideWidget(node, florence2MaxTokensWidget);
@@ -293,6 +295,7 @@ app.registerExtension({
 
             if (florence2NumBeamsWidget) {
                 if (modelType === "florence2") {
+                    florence2NumBeamsWidget.value = 3;  // Reset to default
                     showWidget(node, florence2NumBeamsWidget);
                 } else {
                     hideWidget(node, florence2NumBeamsWidget);
@@ -302,6 +305,7 @@ app.registerExtension({
             // YOLO-World parameters
             if (yoloIouWidget) {
                 if (modelType === "yolo_world") {
+                    yoloIouWidget.value = 0.45;  // Reset to default
                     showWidget(node, yoloIouWidget);
                 } else {
                     hideWidget(node, yoloIouWidget);
@@ -310,6 +314,7 @@ app.registerExtension({
 
             if (yoloAgnosticNmsWidget) {
                 if (modelType === "yolo_world") {
+                    yoloAgnosticNmsWidget.value = false;  // Reset to default
                     showWidget(node, yoloAgnosticNmsWidget);
                 } else {
                     hideWidget(node, yoloAgnosticNmsWidget);
@@ -318,6 +323,7 @@ app.registerExtension({
 
             if (yoloMaxDetWidget) {
                 if (modelType === "yolo_world") {
+                    yoloMaxDetWidget.value = 300;  // Reset to default
                     showWidget(node, yoloMaxDetWidget);
                 } else {
                     hideWidget(node, yoloMaxDetWidget);
@@ -546,6 +552,7 @@ app.registerExtension({
             // Florence-2 Seg parameters
             if (florence2MaxTokensWidget) {
                 if (modelType === "florence2") {
+                    florence2MaxTokensWidget.value = 1024;  // Reset to default
                     showWidget(node, florence2MaxTokensWidget);
                 } else {
                     hideWidget(node, florence2MaxTokensWidget);
@@ -554,6 +561,7 @@ app.registerExtension({
 
             if (florence2NumBeamsWidget) {
                 if (modelType === "florence2") {
+                    florence2NumBeamsWidget.value = 3;  // Reset to default
                     showWidget(node, florence2NumBeamsWidget);
                 } else {
                     hideWidget(node, florence2NumBeamsWidget);
@@ -563,6 +571,7 @@ app.registerExtension({
             // SA2VA parameters
             if (sa2vaMaxTokensWidget) {
                 if (modelType === "sa2va") {
+                    sa2vaMaxTokensWidget.value = 2048;  // Reset to default
                     showWidget(node, sa2vaMaxTokensWidget);
                 } else {
                     hideWidget(node, sa2vaMaxTokensWidget);
@@ -571,6 +580,7 @@ app.registerExtension({
 
             if (sa2vaNumBeamsWidget) {
                 if (modelType === "sa2va") {
+                    sa2vaNumBeamsWidget.value = 1;  // Reset to default
                     showWidget(node, sa2vaNumBeamsWidget);
                 } else {
                     hideWidget(node, sa2vaNumBeamsWidget);

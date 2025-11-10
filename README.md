@@ -18,7 +18,7 @@
 
 ```bash
 cd ComfyUI/custom_nodes/
-git clone <repository-url> ComfyUI-Grounding
+git clone https://github.com/PozzettiAndrea/ComfyUI-Grounding
 cd ComfyUI-Grounding
 pip install -r requirements.txt
 ```

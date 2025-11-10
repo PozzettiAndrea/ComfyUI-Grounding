@@ -22,47 +22,29 @@ def boxes_to_masks(all_boxes, image_shape):
     batch_size, height, width, _ = image_shape
     all_masks = []
 
-    print(f"[Mask Creation] Image shape: {image_shape}")
-    print(f"[Mask Creation] Number of images in batch: {len(all_boxes)}")
-
     for img_idx, boxes in enumerate(all_boxes):
-        print(f"[Mask Creation] Image {img_idx}: {len(boxes)} boxes")
-
         # Create individual masks for each box in this image
         for box_idx, box in enumerate(boxes):
             mask = np.zeros((height, width), dtype=np.float32)
             x1, y1, x2, y2 = box.astype(int)
 
-            print(f"  Box {box_idx}: [{x1}, {y1}, {x2}, {y2}]")
-
             # Clamp to image boundaries
             x1, y1 = max(0, x1), max(0, y1)
             x2, y2 = min(width, x2), min(height, y2)
-
-            print(f"  Clamped: [{x1}, {y1}, {x2}, {y2}]")
 
             # Check if box is valid
             if x2 > x1 and y2 > y1:
                 # Fill the box region with 1.0
                 mask[y1:y2, x1:x2] = 1.0
-                filled_pixels = (y2 - y1) * (x2 - x1)
-                print(f"  Filled {filled_pixels} pixels")
-            else:
-                print(f"  WARNING: Invalid box dimensions!")
 
             all_masks.append(mask)
 
-    # If no boxes detected, return single empty mask
+    # If no boxes detected, return empty masks (one per image in batch)
     if len(all_masks) == 0:
-        print("[Mask Creation] No boxes detected, returning empty mask")
-        return torch.zeros((1, height, width))
+        return torch.zeros((batch_size, height, width))
 
     # Stack all masks
     masks_tensor = torch.from_numpy(np.stack(all_masks))
-    print(f"[Mask Creation] Final masks shape: {masks_tensor.shape}")
-    print(f"[Mask Creation] Masks min/max values: {masks_tensor.min()}/{masks_tensor.max()}")
-    print(f"[Mask Creation] Non-zero pixels: {(masks_tensor > 0).sum().item()}")
-
     return masks_tensor
 
 

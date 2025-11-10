@@ -22,4 +22,4 @@ def test_grounding_detector_input_types(mock_comfy_environment):
     optional = input_types["optional"]
     assert "single_box_mode" in optional
     assert "bbox_output_format" in optional
-    assert "output_masks" in optional
+    # Note: output_masks is now always enabled (not a UI parameter)

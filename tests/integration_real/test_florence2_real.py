@@ -13,10 +13,9 @@ def test_florence2_base_load_eager(mock_comfy_environment):
 
     loader = GroundingModelLoader()
 
-    # Load Florence-2 Base with eager attention
+    # Load Florence-2 Base
     model_dict = loader.load_model(
-        model="Florence-2: Base (0.23B params)",
-        florence2_attn="eager"
+        model="Florence-2: Base (0.23B params)"
     )[0]
 
     assert model_dict is not None
@@ -27,33 +26,17 @@ def test_florence2_base_load_eager(mock_comfy_environment):
 
 
 @pytest.mark.real_model
-def test_florence2_base_load_sdpa(mock_comfy_environment):
-    """Test loading real Florence-2 Base model with SDPA attention"""
-    from nodes import GroundingModelLoader
-
-    loader = GroundingModelLoader()
-
-    # Load Florence-2 Base with SDPA attention
-    model_dict = loader.load_model(
-        model="Florence-2: Base (0.23B params)",
-        florence2_attn="sdpa"
-    )[0]
-
-    assert model_dict is not None
-    assert "type" in model_dict
-    assert model_dict["type"] == "florence2"
-
-
-@pytest.mark.real_model
 def test_florence2_base_detection(mock_comfy_environment, small_image):
     """Test real detection with Florence-2 Base model"""
     from nodes import GroundingModelLoader, GroundingDetector
+    from pathlib import Path
+    from PIL import Image
+    import numpy as np
 
     # Load model
     loader = GroundingModelLoader()
     model_dict = loader.load_model(
-        model="Florence-2: Base (0.23B params)",
-        florence2_attn="eager"
+        model="Florence-2: Base (0.23B params)"
     )[0]
 
     # Run detection
@@ -61,11 +44,25 @@ def test_florence2_base_detection(mock_comfy_environment, small_image):
     bboxes, annotated_img, labels, masks = detector.detect(
         model=model_dict,
         image=small_image,
-        prompt="person",
+        prompt="plant. watering can.",
         confidence_threshold=0.3,
-        bbox_output_format="dict_with_data",
-        output_masks=False
+        bbox_output_format="dict_with_data"
     )
+
+    # Print detection results
+    print(f"\n=== Florence-2 Eager Detection Results ===")
+    print(f"Detected labels: {labels}")
+    print(f"Bboxes: {bboxes}")
+
+    # Save annotated image
+    output_dir = Path(__file__).parent.parent / "test_outputs"
+    output_dir.mkdir(exist_ok=True)
+
+    # Convert tensor to PIL Image and save
+    img_np = (annotated_img[0].cpu().numpy() * 255).astype(np.uint8)
+    img_pil = Image.fromarray(img_np)
+    img_pil.save(output_dir / "florence2_eager_detection.png")
+    print(f"Saved annotated image to {output_dir / 'florence2_eager_detection.png'}")
 
     # Verify outputs structure
     assert bboxes is not None
@@ -84,16 +81,14 @@ def test_florence2_model_caching(mock_comfy_environment, reset_model_cache):
 
     # First load
     model1 = loader.load_model(
-        model="Florence-2: Base (0.23B params)",
-        florence2_attn="eager"
+        model="Florence-2: Base (0.23B params)"
     )[0]
 
     cache_size_after_first = len(MODEL_CACHE)
 
     # Second load (should use cache)
     model2 = loader.load_model(
-        model="Florence-2: Base (0.23B params)",
-        florence2_attn="eager"
+        model="Florence-2: Base (0.23B params)"
     )[0]
 
     cache_size_after_second = len(MODEL_CACHE)
@@ -105,49 +100,6 @@ def test_florence2_model_caching(mock_comfy_environment, reset_model_cache):
 
 
 @pytest.mark.real_model
-def test_florence2_attention_implementations_equivalent(mock_comfy_environment, small_image):
-    """Test that different attention implementations produce similar results"""
-    from nodes import GroundingModelLoader, GroundingDetector
-
-    loader = GroundingModelLoader()
-    detector = GroundingDetector()
-
-    # Load with eager
-    model_eager = loader.load_model(
-        model="Florence-2: Base (0.23B params)",
-        florence2_attn="eager"
-    )[0]
-
-    bboxes_eager, _, _, _ = detector.detect(
-        model=model_eager,
-        image=small_image,
-        prompt="object",
-        confidence_threshold=0.3,
-        bbox_output_format="dict_with_data",
-        output_masks=False
-    )
-
-    # Load with SDPA
-    model_sdpa = loader.load_model(
-        model="Florence-2: Base (0.23B params)",
-        florence2_attn="sdpa"
-    )[0]
-
-    bboxes_sdpa, _, _, _ = detector.detect(
-        model=model_sdpa,
-        image=small_image,
-        prompt="object",
-        confidence_threshold=0.3,
-        bbox_output_format="dict_with_data",
-        output_masks=False
-    )
-
-    # Both should produce valid outputs (results may vary slightly)
-    assert bboxes_eager is not None
-    assert bboxes_sdpa is not None
-
-
-@pytest.mark.real_model
 def test_florence2_mask_generation(mock_comfy_environment, small_image):
     """Test Florence-2 mask generation capability (from bounding boxes)"""
     from nodes import GroundingModelLoader, GroundingDetector
@@ -155,20 +107,21 @@ def test_florence2_mask_generation(mock_comfy_environment, small_image):
     # Load regular bbox detection model
     loader = GroundingModelLoader()
     model_dict = loader.load_model(
-        model="Florence-2: Base (0.23B params)",
-        florence2_attn="eager"
+        model="Florence-2: Base (0.23B params)"
     )[0]
 
-    # Run detection with output_masks=True
+    # Run detection with masks
     detector = GroundingDetector()
     bboxes, annotated_img, labels, masks = detector.detect(
         model=model_dict,
         image=small_image,
-        prompt="object",
+        prompt="plant. watering can.",
         confidence_threshold=0.3,
-        bbox_output_format="dict_with_data",
-        output_masks=True
+        bbox_output_format="dict_with_data"
     )
+
+    print(f"\n=== Florence-2 Mask Generation ===")
+    print(f"Labels: {labels}, Masks: {masks is not None}")
 
     # Verify outputs structure
     assert bboxes is not None
@@ -184,28 +137,29 @@ def test_florence2_different_prompts(mock_comfy_environment, small_image):
 
     loader = GroundingModelLoader()
     model_dict = loader.load_model(
-        model="Florence-2: Base (0.23B params)",
-        florence2_attn="eager"
+        model="Florence-2: Base (0.23B params)"
     )[0]
 
     detector = GroundingDetector()
 
     prompts = [
-        "person",
-        "person and dog",
-        "Locate person",
-        "Find the person in the image"
+        "plant. watering can.",
+        "plant",
+        "watering can",
+        "Locate plant and watering can"
     ]
 
     for prompt in prompts:
-        bboxes, _, _, _ = detector.detect(
+        bboxes, _, labels, _ = detector.detect(
             model=model_dict,
             image=small_image,
             prompt=prompt,
             confidence_threshold=0.3,
-            bbox_output_format="dict_with_data",
-            output_masks=False
+            bbox_output_format="dict_with_data"
         )
+
+        print(f"\n=== Florence-2 Prompt Test: '{prompt}' ===")
+        print(f"Labels: {labels}")
 
         # Each prompt should produce valid output
         assert bboxes is not None

@@ -21,7 +21,7 @@ huggingface_hub>=0.20.0
 pyyaml>=6.0
 tqdm>=4.65.0
 
-#For flash attention
-torch==2.8.0
+# For flash attention
+# torch>=2.0.0  # Usually provided by ComfyUI - uncomment if needed
 torchvision
 flash_attn
