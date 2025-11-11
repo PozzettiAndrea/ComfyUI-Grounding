@@ -1,0 +1,71 @@
+"""
+SA2VA model loading
+"""
+import torch
+import os
+import folder_paths
+import comfy.model_management as mm
+
+
+def load_sa2va(model_name, config, sa2va_dtype="auto"):
+    """Load SA2VA model for vision-language segmentation
+
+    Args:
+        model_name: Model display name
+        config: Model configuration dict from registry
+        sa2va_dtype: Model precision (auto, fp16, bf16, fp32)
+
+    Returns:
+        Dict containing model, tokenizer, type, and framework
+    """
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    hf_id = config["hf_id"]
+    device = mm.get_torch_device()
+
+    # Use ComfyUI standard model directories
+    cache_dir = os.path.join(folder_paths.models_dir, "sa2va")
+    os.makedirs(cache_dir, exist_ok=True)
+
+    print(f"📦 Loading SA2VA Model: {model_name}")
+    print(f"🎨 Using SA2VA dtype: {sa2va_dtype}")
+
+    # Map dtype string to torch dtype
+    dtype_map = {
+        "auto": "auto",
+        "fp16": torch.float16,
+        "bf16": torch.bfloat16,
+        "fp32": torch.float32
+    }
+    torch_dtype = dtype_map.get(sa2va_dtype, "auto")
+
+    print(f"📥 Loading model from HuggingFace ({hf_id})...")
+    print(f"📂 Cache directory: {cache_dir}")
+    print(f"⚠️  IMPORTANT: trust_remote_code=True is required for SA2VA")
+
+    # Load model
+    model = AutoModelForCausalLM.from_pretrained(
+        hf_id,
+        torch_dtype=torch_dtype,
+        device_map=device,
+        cache_dir=cache_dir,
+        trust_remote_code=True  # Required for SA2VA custom code
+    )
+
+    # Load tokenizer
+    tokenizer = AutoTokenizer.from_pretrained(
+        hf_id,
+        cache_dir=cache_dir,
+        trust_remote_code=True  # Required for SA2VA custom code
+    )
+
+    model.eval()
+
+    print(f"✅ Successfully loaded {model_name}")
+
+    return {
+        "model": model,
+        "tokenizer": tokenizer,
+        "type": "sa2va",
+        "framework": "transformers"
+    }

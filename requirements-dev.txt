@@ -1,0 +1,13 @@
+# Testing dependencies
+pytest>=8.0.0
+pytest-cov>=4.1.0
+pytest-mock>=3.12.0
+pytest-asyncio>=0.23.0
+
+# Code quality tools
+ruff>=0.2.0
+black>=24.0.0
+isort>=5.13.0
+
+# Pre-commit hooks (optional)
+pre-commit>=3.6.0

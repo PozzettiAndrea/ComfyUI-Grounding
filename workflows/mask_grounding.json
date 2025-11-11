@@ -1,0 +1,245 @@
+{
+  "id": "38945c5c-4e77-4d6c-b916-6a2f0a1b6a89",
+  "revision": 0,
+  "last_node_id": 36,
+  "last_link_id": 44,
+  "nodes": [
+    {
+      "id": 33,
+      "type": "LoadImage",
+      "pos": [
+        -303.3027379792829,
+        92.61863567718751
+      ],
+      "size": [
+        274.080078125,
+        314
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            42
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "brekkie.jpg",
+        "image"
+      ]
+    },
+    {
+      "id": 31,
+      "type": "PreviewAny",
+      "pos": [
+        580.0735093941091,
+        291.1285668669379
+      ],
+      "size": [
+        210,
+        88
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "source",
+          "type": "*",
+          "link": 37
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewAny",
+        "cnr_id": "comfy-core",
+        "ver": "0.3.67"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 29,
+      "type": "PreviewImage",
+      "pos": [
+        564.3432225749335,
+        -58.75360697114505
+      ],
+      "size": [
+        279.1381383513526,
+        299.2129823737602
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 35
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage",
+        "cnr_id": "comfy-core",
+        "ver": "0.3.67"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 18,
+      "type": "GroundingMaskModelLoader",
+      "pos": [
+        -299.81672209985305,
+        -40.87788547709978
+      ],
+      "size": [
+        270,
+        82
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "model",
+          "type": "MASK_MODEL",
+          "links": [
+            21
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "GroundingMaskModelLoader",
+        "aux_id": "PozzettiAndrea/ComfyUI-Grounding",
+        "ver": "a947f4961c39cc150a98738fa83a0494e52f3de0"
+      },
+      "widgets_values": [
+        "SA2VA: 4B",
+        "bf16"
+      ]
+    },
+    {
+      "id": 19,
+      "type": "GroundingMaskDetector",
+      "pos": [
+        106.9620845129382,
+        -14.471635853967237
+      ],
+      "size": [
+        400,
+        248
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MASK_MODEL",
+          "link": 21
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 42
+        }
+      ],
+      "outputs": [
+        {
+          "name": "masks",
+          "type": "MASK",
+          "links": []
+        },
+        {
+          "name": "overlaid_mask",
+          "type": "IMAGE",
+          "links": [
+            35
+          ]
+        },
+        {
+          "name": "text",
+          "type": "STRING",
+          "links": [
+            37
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "GroundingMaskDetector",
+        "aux_id": "PozzettiAndrea/ComfyUI-Grounding",
+        "ver": "a947f4961c39cc150a98738fa83a0494e52f3de0"
+      },
+      "widgets_values": [
+        "Segment the food with the most vitamin C",
+        0.3,
+        2048,
+        1,
+        42,
+        "fixed"
+      ]
+    }
+  ],
+  "links": [
+    [
+      21,
+      18,
+      0,
+      19,
+      0,
+      "MASK_MODEL"
+    ],
+    [
+      35,
+      19,
+      1,
+      29,
+      0,
+      "IMAGE"
+    ],
+    [
+      37,
+      19,
+      2,
+      31,
+      0,
+      "*"
+    ],
+    [
+      42,
+      33,
+      0,
+      19,
+      1,
+      "IMAGE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 1.0656610873109524,
+      "offset": [
+        315.358950162618,
+        142.88899383901187
+      ]
+    },
+    "frontendVersion": "1.28.8"
+  },
+  "version": 0.4
+}
