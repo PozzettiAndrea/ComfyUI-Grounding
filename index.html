@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ComfyUI-Grounding Test Results</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            color: #58a6ff;
+        }
+        .subtitle {
+            color: #8b949e;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #58a6ff;
+            display: block;
+        }
+        .stat-label {
+            color: #8b949e;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        .runs-section {
+            margin-top: 3rem;
+        }
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: #c9d1d9;
+            border-bottom: 1px solid #30363d;
+            padding-bottom: 0.5rem;
+        }
+        .runs-grid {
+            display: grid;
+            gap: 1rem;
+        }
+        .run-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 1.5rem;
+            display: grid;
+            grid-template-columns: auto 1fr auto auto;
+            gap: 1.5rem;
+            align-items: center;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: inherit;
+        }
+        .run-card:hover {
+            transform: translateX(4px);
+            border-color: #58a6ff;
+            box-shadow: 0 4px 12px rgba(88, 166, 255, 0.1);
+        }
+        .run-number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #58a6ff;
+            min-width: 80px;
+        }
+        .run-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+        .run-timestamp {
+            color: #8b949e;
+            font-size: 0.9rem;
+        }
+        .run-images {
+            color: #c9d1d9;
+            font-size: 0.9rem;
+        }
+        .run-badge {
+            background: #238636;
+            color: #fff;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .run-badge.latest {
+            background: #1f6feb;
+        }
+        .view-link {
+            color: #58a6ff;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border: 1px solid #58a6ff;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .view-link:hover {
+            background: #58a6ff;
+            color: #0d1117;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #8b949e;
+        }
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        footer {
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid #30363d;
+            text-align: center;
+            color: #8b949e;
+            font-size: 0.9rem;
+        }
+        footer a {
+            color: #58a6ff;
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 768px) {
+            .run-card {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            .run-number {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Results Gallery</h1>
+        <p class="subtitle">Visual outputs from ComfyUI-Grounding automated tests</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-value">2</span>
+                <div class="stat-label">Test Runs</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value">8</span>
+                <div class="stat-label">Total Images</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value">4</span>
+                <div class="stat-label">Latest Run Images</div>
+            </div>
+        </div>
+
+        <div class="runs-section">
+            <h2 class="section-title">All Test Runs</h2>
+            <div class="runs-grid">
+
+                <a href="./13/" class="run-card">
+                    <div class="run-number">#13</div>
+                    <div class="run-info">
+                        <div class="run-timestamp">📅 2025-11-10 22:55:20</div>
+                        <div class="run-images">🖼️  4 images</div>
+                    </div>
+                    <span class="run-badge latest">Latest</span>
+                    <div class="view-link">View Gallery →</div>
+                </a>
+
+                <a href="./12/" class="run-card">
+                    <div class="run-number">#12</div>
+                    <div class="run-info">
+                        <div class="run-timestamp">📅 2025-11-10 18:29:44</div>
+                        <div class="run-images">🖼️  4 images</div>
+                    </div>
+                    
+                    <div class="view-link">View Gallery →</div>
+                </a>
+            </div>
+
+        </div>
+
+        <footer>
+            <p>
+                Generated automatically by
+                <a href="https://github.com/PozzettiAndrea/ComfyUI-Grounding" target="_blank">ComfyUI-Grounding</a>
+                CI/CD pipeline
+            </p>
+            <p style="margin-top: 0.5rem;">
+                Last updated: 2025-11-11 10:33:08 UTC
+            </p>
+        </footer>
+    </div>
+</body>
+</html>
