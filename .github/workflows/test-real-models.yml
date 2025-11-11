@@ -1,0 +1,126 @@
+name: Real Model Integration Tests
+
+on:
+  # Run on schedule (weekly, every Monday at 3 AM UTC)
+  schedule:
+    - cron: '0 3 * * 1'
+
+  # Allow manual trigger
+  workflow_dispatch:
+
+  # Run on push to main branches
+  push:
+    branches: [main, master, dev]
+
+jobs:
+  test-real-models:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60  # Real model tests can take longer
+
+    permissions:
+      contents: write  # Required for GitHub Pages deployment
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+        cache: 'pip'
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-cov pytest-mock pytest-asyncio
+        pip install opencv-python-headless
+        pip install -r .github/requirements-ci.txt
+        pip install -r requirements-dev.txt
+
+    - name: Create model cache directory
+      run: |
+        mkdir -p ~/.cache/huggingface
+
+    - name: Cache models
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/huggingface
+        key: ${{ runner.os }}-huggingface-models-${{ hashFiles('tests/integration_real/*.py') }}
+        restore-keys: |
+          ${{ runner.os }}-huggingface-models-
+
+    - name: Run real model tests
+      run: |
+        pytest tests/integration_real/ -v -m real_model --tb=short
+      env:
+        PYTHONPATH: ${{ github.workspace }}
+        HF_HUB_DISABLE_TELEMETRY: 1
+
+    - name: Generate test gallery
+      if: always()
+      run: |
+        python tests/generate_test_gallery.py tests/test_outputs
+
+    - name: Test summary
+      if: always()
+      run: |
+        echo "## Real Model Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Real model tests completed. Check logs above for detailed results." >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [ -d "tests/test_outputs" ] && [ "$(ls -A tests/test_outputs/*.png 2>/dev/null)" ]; then
+          echo "📸 Visual test outputs: [View Gallery](https://${{ github.repository_owner }}.github.io/ComfyUI-Grounding/${{ github.run_number }}/)" >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Upload test visual outputs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-visual-outputs
+        path: tests/test_outputs/*.png
+        retention-days: 30
+        if-no-files-found: ignore
+
+    - name: Upload test artifacts
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-failures
+        path: |
+          pytest-results/
+          tests/test_outputs/
+          *.log
+
+    - name: Deploy to GitHub Pages
+      if: always()
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./tests/test_outputs
+        destination_dir: ${{ github.run_number }}
+        keep_files: true
+        enable_jekyll: false
+
+    - name: Checkout gh-pages branch
+      if: always()
+      uses: actions/checkout@v4
+      with:
+        ref: gh-pages
+        path: gh-pages-content
+
+    - name: Generate central index page
+      if: always()
+      run: |
+        mkdir -p deploy-index
+        python tests/generate_index_page.py gh-pages-content deploy-index/index.html ${{ github.repository }}
+        ls -la deploy-index/
+
+    - name: Deploy index page to root
+      if: always()
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./deploy-index
+        keep_files: true
+        enable_jekyll: false

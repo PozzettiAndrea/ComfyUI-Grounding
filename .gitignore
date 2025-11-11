@@ -51,6 +51,9 @@ coverage.xml
 .pytest_cache/
 cover/
 
+# Test outputs
+tests/test_outputs/
+
 # Translations
 *.mo
 *.pot
@@ -205,3 +208,7 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Local marker files (machine-specific installation state)
+.flash_attn_attempted
+.assets_copied

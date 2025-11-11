@@ -1,0 +1,211 @@
+{
+  "id": "23662dd8-0bfd-4ab0-833e-1775efda6729",
+  "revision": 0,
+  "last_node_id": 19,
+  "last_link_id": 21,
+  "nodes": [
+    {
+      "id": 3,
+      "type": "GroundingModelLoader",
+      "pos": [
+        -324.99609375,
+        -3.8984375
+      ],
+      "size": [
+        270,
+        58
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "model",
+          "type": "GROUNDING_MODEL",
+          "links": [
+            1
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "GroundingModelLoader",
+        "aux_id": "PozzettiAndrea/ComfyUI-Grounding",
+        "ver": "a947f4961c39cc150a98738fa83a0494e52f3de0"
+      },
+      "widgets_values": [
+        "Florence-2: Large (0.77B params)"
+      ]
+    },
+    {
+      "id": 18,
+      "type": "LoadImage",
+      "pos": [
+        -361.5061512509591,
+        112.76113420046104
+      ],
+      "size": [
+        274.080078125,
+        314
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            20
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "plantpot.png",
+        "image"
+      ]
+    },
+    {
+      "id": 1,
+      "type": "GroundingDetector",
+      "pos": [
+        68.70780892432435,
+        37.906621234841865
+      ],
+      "size": [
+        400,
+        340
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "GROUNDING_MODEL",
+          "link": 1
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 20
+        }
+      ],
+      "outputs": [
+        {
+          "name": "bboxes",
+          "type": "BBOX",
+          "links": []
+        },
+        {
+          "name": "annotated_image",
+          "type": "IMAGE",
+          "links": [
+            21
+          ]
+        },
+        {
+          "name": "labels",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "masks",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "GroundingDetector",
+        "aux_id": "PozzettiAndrea/ComfyUI-Grounding",
+        "ver": "a947f4961c39cc150a98738fa83a0494e52f3de0"
+      },
+      "widgets_values": [
+        "plant. watering can",
+        0.3,
+        false,
+        true,
+        "list_only",
+        1024,
+        3,
+        42,
+        "fixed"
+      ]
+    },
+    {
+      "id": 19,
+      "type": "PreviewImage",
+      "pos": [
+        530.6472534980396,
+        42.682752634548045
+      ],
+      "size": [
+        339.1799683347449,
+        401.7374663149234
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 21
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    }
+  ],
+  "links": [
+    [
+      1,
+      3,
+      0,
+      1,
+      0,
+      "GROUNDING_MODEL"
+    ],
+    [
+      20,
+      18,
+      0,
+      1,
+      1,
+      "IMAGE"
+    ],
+    [
+      21,
+      1,
+      1,
+      19,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.8435449624570703,
+      "offset": [
+        425.7123038653443,
+        180.08680307006819
+      ]
+    },
+    "frontendVersion": "1.28.8"
+  },
+  "version": 0.4
+}
