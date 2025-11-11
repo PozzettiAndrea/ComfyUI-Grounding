@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Visual Outputs</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: #58a6ff;
+        }
+        .meta {
+            color: #8b949e;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        .image-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .image-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            border-color: #58a6ff;
+        }
+        .image-container {
+            position: relative;
+            width: 100%;
+            padding-top: 75%; /* 4:3 aspect ratio */
+            background: #0d1117;
+            overflow: hidden;
+        }
+        .image-container img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            cursor: pointer;
+        }
+        .image-title {
+            padding: 1rem;
+            font-weight: 500;
+            color: #c9d1d9;
+            word-break: break-word;
+        }
+        .lightbox {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+        }
+        .lightbox.active {
+            display: flex;
+        }
+        .lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+        .close {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            color: #fff;
+            font-size: 3rem;
+            font-weight: 300;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .close:hover {
+            color: #58a6ff;
+        }
+        .stats {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            display: inline-block;
+        }
+        .stats strong {
+            color: #58a6ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Visual Outputs</h1>
+        <div class="meta">
+            Generated: 2025-11-11 13:48:21 UTC
+        </div>
+        <div class="stats">
+            <strong>4</strong> test output image(s)
+        </div>
+
+        <div class="gallery">
+
+            <div class="image-card">
+                <div class="image-container">
+                    <img src="florence2_eager_detection.png" alt="florence2_eager_detection.png" onclick="openLightbox('florence2_eager_detection.png')">
+                </div>
+                <div class="image-title">florence2_eager_detection.png</div>
+            </div>
+
+            <div class="image-card">
+                <div class="image-container">
+                    <img src="grounding_dino_detection.png" alt="grounding_dino_detection.png" onclick="openLightbox('grounding_dino_detection.png')">
+                </div>
+                <div class="image-title">grounding_dino_detection.png</div>
+            </div>
+
+            <div class="image-card">
+                <div class="image-container">
+                    <img src="owlv2_detection.png" alt="owlv2_detection.png" onclick="openLightbox('owlv2_detection.png')">
+                </div>
+                <div class="image-title">owlv2_detection.png</div>
+            </div>
+
+            <div class="image-card">
+                <div class="image-container">
+                    <img src="yolo_world_detection.png" alt="yolo_world_detection.png" onclick="openLightbox('yolo_world_detection.png')">
+                </div>
+                <div class="image-title">yolo_world_detection.png</div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <span class="close">&times;</span>
+        <img id="lightbox-img" src="" alt="">
+    </div>
+
+    <script>
+        function openLightbox(src) {
+            document.getElementById('lightbox').classList.add('active');
+            document.getElementById('lightbox-img').src = src;
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+        }
+
+        // Close on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeLightbox();
+            }
+        });
+    </script>
+</body>
+</html>
