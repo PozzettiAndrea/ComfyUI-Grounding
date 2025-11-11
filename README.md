@@ -57,18 +57,22 @@ On first startup, example assets and workflows are auto-installed.
 
 ### Detection Nodes
 **1. Grounding Model Loader** - 19+ models in dropdown (see footnotes)
+
 **2. Grounding Detector** - Universal detector, splits labels on "." only
 
 ### Mask Generation Nodes
 **3. Grounding Mask Loader** - Florence-2 (2) + SA2VA (4) models
+
 **4. Grounding Mask Detector** - Direct masks from text, outputs masks + overlays + descriptions
 
 ### SAM2 Segmentation Nodes
 **5. SAM2 Model Loader** - SAM2/2.1 (8 variants), auto-downloads, fp16/bf16/fp32
+
 **6. SAM2 Segment** - Segment from bboxes or points
 
 ### Utility Nodes
 **7. Bounding Box Visualizer** - Custom line width
+
 **8. Batch Crop and Pad** - Uniform sizing for batches
 
 ## Example Workflows
