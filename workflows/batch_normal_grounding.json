@@ -40,7 +40,7 @@
     },
     {
       "id": 12,
-      "type": "DownloadAndLoadSAM2Model",
+      "type": "DownLoadSAM2Model",
       "pos": [
         134.1244248881893,
         -152.4815917189195
@@ -65,7 +65,7 @@
       "properties": {
         "aux_id": "PozzettiAndrea/ComfyUI-Grounding",
         "ver": "a947f4961c39cc150a98738fa83a0494e52f3de0",
-        "Node name for S&R": "DownloadAndLoadSAM2Model"
+        "Node name for S&R": "DownLoadSAM2Model"
       },
       "widgets_values": [
         "sam2.1_hiera_large.safetensors",
@@ -118,7 +118,7 @@
     },
     {
       "id": 11,
-      "type": "Sam2Segmentation",
+      "type": "Sam2Segment",
       "pos": [
         507.4435292430558,
         34.683721146105555
@@ -178,7 +178,7 @@
       "properties": {
         "aux_id": "PozzettiAndrea/ComfyUI-Grounding",
         "ver": "a947f4961c39cc150a98738fa83a0494e52f3de0",
-        "Node name for S&R": "Sam2Segmentation"
+        "Node name for S&R": "Sam2Segment"
       },
       "widgets_values": [
         false,

@@ -449,7 +449,7 @@ class GroundingMaskDetector:
 # SAM2 Nodes
 # ============================================================================
 
-class DownloadAndLoadSAM2Model:
+class DownLoadSAM2Model:
     @classmethod
     def INPUT_TYPES(s):
         return sam2.params.LOADER_PARAMS
@@ -465,7 +465,7 @@ class DownloadAndLoadSAM2Model:
         return (sam2_model,)
 
 
-class Sam2Segmentation:
+class Sam2Segment:
     def __init__(self):
         self.inference_state = None
 
@@ -760,8 +760,8 @@ NODE_CLASS_MAPPINGS = {
     "GroundingDetector": GroundingDetector,
     "GroundingMaskModelLoader": GroundingMaskModelLoader,
     "GroundingMaskDetector": GroundingMaskDetector,
-    "DownloadAndLoadSAM2Model": DownloadAndLoadSAM2Model,
-    "Sam2Segmentation": Sam2Segmentation,
+    "DownLoadSAM2Model": DownLoadSAM2Model,
+    "Sam2Segment": Sam2Segment,
     "BboxVisualizer": BboxVisualizer,
     "BatchCropAndPadFromMask": BatchCropAndPadFromMask,
 }
@@ -771,8 +771,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "GroundingDetector": "Grounding Detector",
     "GroundingMaskModelLoader": "Grounding Mask Loader",
     "GroundingMaskDetector": "Grounding Mask Detector",
-    "DownloadAndLoadSAM2Model": "SAM2 Model Loader",
-    "Sam2Segmentation": "SAM2 Segmentation",
+    "DownLoadSAM2Model": "SAM2 Model Loader",
+    "Sam2Segment": "SAM2 Segmentation",
     "BboxVisualizer": "Bounding Box Visualizer",
     "BatchCropAndPadFromMask": "Batch Crop and Pad From Mask",
 }
