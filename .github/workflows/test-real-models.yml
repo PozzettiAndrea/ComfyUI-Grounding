@@ -101,3 +101,26 @@ jobs:
         destination_dir: ${{ github.run_number }}
         keep_files: true
         enable_jekyll: false
+
+    - name: Checkout gh-pages branch
+      if: always()
+      uses: actions/checkout@v4
+      with:
+        ref: gh-pages
+        path: gh-pages-content
+
+    - name: Generate central index page
+      if: always()
+      run: |
+        mkdir -p deploy-index
+        python tests/generate_index_page.py gh-pages-content deploy-index/index.html ${{ github.repository }}
+        ls -la deploy-index/
+
+    - name: Deploy index page to root
+      if: always()
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./deploy-index
+        keep_files: true
+        enable_jekyll: false

@@ -9,7 +9,6 @@ einops>=0.6.0  # Required by Florence-2 and SA2VA model architectures
 ultralytics>=8.2.0
 hf_transfer
 peft
-# flash_attn  # Optional - improves SA2VA performance but not required
 
 # Image processing (usually already installed with ComfyUI)
 # pillow>=10.0.0
@@ -26,4 +25,4 @@ tqdm>=4.65.0
 torch<=2.8.0
 torchvision
 torchaudio
-# flash_attn  # Optional - improves SA2VA inference speed but not required
+flash_attn
