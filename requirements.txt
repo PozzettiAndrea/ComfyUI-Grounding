@@ -3,10 +3,12 @@
 # For GroundingDINO, MM-GroundingDINO, and OWLv2 (HuggingFace transformers)
 transformers>=4.30.0
 timm>=0.9.0
+einops>=0.6.0  # Required by Florence-2 and SA2VA model architectures
 
 # For YOLO-World
 ultralytics>=8.2.0
 hf_transfer
+peft
 
 # Image processing (usually already installed with ComfyUI)
 # pillow>=10.0.0
@@ -18,3 +20,9 @@ hf_transfer
 huggingface_hub>=0.20.0
 pyyaml>=6.0
 tqdm>=4.65.0
+
+# For flash attention (optional for SA2VA performance)
+torch<=2.8.0
+torchvision
+torchaudio
+flash_attn

@@ -1,12 +1,14 @@
 # ComfyUI-Grounding
 
-**Grounding for dummies, simplest workflow**
+**Grounding toolbox**
 
 ![Simple Workflow](docs/simple.png)
 
-🎯 **3 Nodes Total** - Loader → Detector → Visualizer
+🎯 **8 Nodes Total** - 2 Loaders + 2 Detectors + 2 SAM2 + 2 Utilities
 
-🚀 **5 Model Families** - GroundingDINO, MM-GroundingDINO, OWLv2, Florence-2, YOLO-World
+🚀 **6 Model Families** - GroundingDINO, MM-GroundingDINO, OWLv2, Florence-2, YOLO-World, SA2VA
+
+🤖 **33 Models** - 19 bbox detection + 6 mask generation + 8 SAM2 variants
 
 💾 **Smart Caching** - Instant reload
 
@@ -14,20 +16,90 @@
 
 🎭 **Built-in Masks** - No separate BboxToMask node needed
 
-## Quick Start
+## Visual Demos
+
+### Model Switching
+Switch between 19+ detection models with a single dropdown. One node for everything.
+
+![Model Switching](docs/model_switching.gif)
+
+### SA2VA Vision-Language Segmentation
+When Florence2 isn't enough. Sa2va has VERY advanced semantic understanding and reasoning capabilities.
+
+![SA2VA in Action](docs/sa2va.gif)
+
+### SAM2 Support
+
+![SAM2 Segmentation](docs/sam2_support.gif)
+
+### Batch Processing
+Process multiple images simultaneously with all nodes supporting batch operations.
+
+![Batch Processing](docs/batch_processing.gif)
+
+### Label Splitting Logic
+Control label separation: use periods for multiple labels, commas for single compound labels.
+
+![Prompt Separation Logic](docs/prompt_separation_logic.gif)
+
+## Installation
 
 ```bash
 cd ComfyUI/custom_nodes/
-git clone <repository-url> ComfyUI-Grounding
+git clone https://github.com/PozzettiAndrea/ComfyUI-Grounding
 cd ComfyUI-Grounding
 pip install -r requirements.txt
 ```
 
+On first startup, example assets and workflows are auto-installed.
+
 ## The Nodes
 
+### Detection Nodes
+**1. Grounding Model Loader** - 19+ models in dropdown (see footnotes)
 
-### 1. Grounding Model Loader
-Load any of 15+ models from a single dropdown.
+**2. Grounding Detector** - Universal detector, splits labels on "." only
+
+### Mask Generation Nodes
+**3. Grounding Mask Loader** - Florence-2 (2) + SA2VA (4) models
+
+**4. Grounding Mask Detector** - Direct masks from text, outputs masks + overlays + descriptions
+
+### SAM2 Segmentation Nodes
+**5. SAM2 Model Loader** - SAM2/2.1 (8 variants), auto-downloads, fp16/bf16/fp32
+
+**6. SAM2 Segment** - Segment from bboxes or points
+
+### Utility Nodes
+**7. Bounding Box Visualizer** - Custom line width
+
+**8. Batch Crop and Pad** - Uniform sizing for batches
+
+## Example Workflows
+
+- **normal_grounding.json** - Detection + SAM2 segmentation
+- **batch_normal_grounding.json** - Multi-image processing
+- **mask_grounding.json** - Direct SA2VA masking
+
+## Advanced Features
+
+**Detection modes:** `single_box_mode` (top result only) • `single_box_per_prompt_mode` (best per label)
+**Output formats:** `list_only` (SAM2-compatible) • `dict_with_data` (with labels/scores)
+**Prompt format:** Use periods for multiple labels `"dog. cat."` • Use commas for single label `"small, brown dog"`
+
+## Credits
+
+- [GroundingDINO](https://github.com/IDEA-Research/GroundingDINO) - IDEA-Research
+- [OWLv2](https://huggingface.co/google/owlv2-base-patch16) - Google Research
+- [Florence-2](https://huggingface.co/microsoft/Florence-2-base) - Microsoft Research
+- [YOLO-World](https://github.com/ultralytics/ultralytics) - Ultralytics
+
+## License
+
+MIT License
+
+## Footnotes
+Full list of models:
 
 <div style="font-size: 0.75em; line-height: 1.4;">
 
@@ -51,67 +123,3 @@ Load any of 15+ models from a single dropdown.
   18. YOLO-World: v8l (Large) - yolov8l-worldv2.pt
   19. YOLO-World: v8x (Extra Large) - yolov8x-worldv2.pt
 </div>
-
-### 2. Grounding Detector
-Universal detector for all models.
-
-#### Key Features
-
-<div style="font-size: 0.9em; line-height: 1.4;">
-
-- Overrides standard text label splitting. It splits only at ".", otherwise label is what you write
-- Enable `single_box_mode` for single detection
-- First load: Downloads model
-- Second load: Instant from cache
-- Models stored in ComfyUI standard folders:
-  - GroundingDINO → `models/grounding-dino/`
-  - Florence-2 & OWLv2 → `models/LLM/`
-  - YOLO-World → `models/yolo_world/`
-  - SAM2 → `models/sam2/`
-- Process multiple images in one pass
-- All nodes support batches
-</div>
-
-#### Florence-2 Attention Modes
-
-<div style="font-size: 0.9em; line-height: 1.4;">
-
-- `eager` - Most compatible (default)
-- `sdpa` - Faster on PyTorch 2.0+
-- `flash_attention_2` - Fastest on A100/H100
-</div>
-
-### 3. Bounding Box Visualizer
-<div style="font-size: 0.9em; line-height: 1.4;">
-
-Re-draw bboxes on images with custom line width. Optional since detector already returns annotated images.
-</div>
-
-### 4. SAM2 Integration
-
-<div style="font-size: 0.9em; line-height: 1.4;">
-
-**DownloadAndLoadSAM2Model** - Load SAM2 models (base/large/small/tiny)
-**Sam2Segmentation** - Segment using bboxes from grounding models or point coordinates
-
-- Supports batch processing
-- Models cached in memory for instant reload
-- Compatible with all grounding model outputs
-</div>
-
-### Tips
-
-**Prompt Format:**
-- Use periods for multiple labels → `"laser. crocodile."`
-- Use commas to keep a single label → `"laser, crocodile"`
-
-## Credits
-
-- [GroundingDINO](https://github.com/IDEA-Research/GroundingDINO) - IDEA-Research
-- [OWLv2](https://huggingface.co/google/owlv2-base-patch16) - Google Research
-- [Florence-2](https://huggingface.co/microsoft/Florence-2-base) - Microsoft Research
-- [YOLO-World](https://github.com/ultralytics/ultralytics) - Ultralytics
-
-## License
-
-MIT License
