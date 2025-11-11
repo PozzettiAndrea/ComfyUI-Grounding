@@ -44,119 +44,44 @@ Control label separation: use periods for multiple labels, commas for single com
 
 ## Installation
 
-**On first ComfyUI startup:**
-- Example assets auto-copied to `ComfyUI/input/`
-- Example workflows auto-copied to user workflows with "ComfyUI-Grounding_" prefix
+```bash
+cd ComfyUI/custom_nodes/
+git clone https://github.com/PozzettiAndrea/ComfyUI-Grounding
+cd ComfyUI-Grounding
+pip install -r requirements.txt
+```
+
+On first startup, example assets and workflows are auto-installed.
 
 ## The Nodes
 
 ### Detection Nodes
-
-#### 1. Grounding Model (down)Loader
-Load any of 15+ models from a single dropdown. See footnotes for full list
-
-#### 2. Grounding Detector
-Universal detector for all models with bbox/mask output.
-
-#### Key Features
-
-<div style="font-size: 0.9em; line-height: 1.4;">
-
-- Overrides standard text label splitting. It splits only at ".", otherwise label is what you write
-- Enable `single_box_mode` for single detection
-- First load: Downloads model
-- Second load: Instant from cache
-- Models stored in ComfyUI standard folders:
-  - GroundingDINO → `models/grounding-dino/`
-  - Florence-2 & OWLv2 → `models/LLM/`
-  - YOLO-World → `models/yolo_world/`
-  - SAM2 → `models/sam2/`
-- Process multiple images in one pass
-- All nodes support batches
-</div>
+**1. Grounding Model Loader** - 19+ models in dropdown (see footnotes)
+**2. Grounding Detector** - Universal detector, splits labels on "." only
 
 ### Mask Generation Nodes
-
-#### 3. Grounding Mask (down)Loader
-<div style="font-size: 0.9em; line-height: 1.4;">
-
-Load mask generation models:
-
-**Florence-2 Segmentation (2 models)**
-- Direct segmentation masks from text prompts
-
-**SA2VA Vision-Language (4 models)**
-- Visual grounding with advanced semantic understanding
-- Requires `trust_remote_code=True`
-- Supports fp16/bf16/fp32 precision options
-</div>
-
-#### 4. Grounding Mask Detector
-<div style="font-size: 0.9em; line-height: 1.4;">
-
-Direct mask generation from text prompts. Outputs masks, overlaid images, and generated text descriptions.
-</div>
+**3. Grounding Mask Loader** - Florence-2 (2) + SA2VA (4) models
+**4. Grounding Mask Detector** - Direct masks from text, outputs masks + overlays + descriptions
 
 ### SAM2 Segmentation Nodes
-
-#### 5. SAM2 Model (down)Loader
-<div style="font-size: 0.9em; line-height: 1.4;">
-
-Load SAM2 models for high-quality segmentation:
-
-**SAM2/2.1 (4 variants)**
-
-Auto-downloads from HuggingFace (Kijai/sam2-safetensors) if not found locally.
-Supports fp16/bf16/fp32 precision and 3 segmentor modes: single_image, video, automaskgenerator.
-</div>
-
-#### 6. SAM2 Segment
-<div style="font-size: 0.9em; line-height: 1.4;">
-
-Segment using bboxes from grounding models or point coordinates.
-- Supports batch processing
-- Models cached in memory for instant reload
-- Compatible with all grounding model outputs
-</div>
+**5. SAM2 Model Loader** - SAM2/2.1 (8 variants), auto-downloads, fp16/bf16/fp32
+**6. SAM2 Segment** - Segment from bboxes or points
 
 ### Utility Nodes
-
-#### 7. Bounding Box Visualizer
-<div style="font-size: 0.9em; line-height: 1.4;">
-
-Re-draw bboxes on images with custom line width. Optional since detector already returns annotated images.
-</div>
-
-#### 8. Batch Crop and Pad From Mask
-<div style="font-size: 0.9em; line-height: 1.4;">
-
-Crops images to mask bounding boxes and pads them to uniform size for batch processing.
-</div>
+**7. Bounding Box Visualizer** - Custom line width
+**8. Batch Crop and Pad** - Uniform sizing for batches
 
 ## Example Workflows
 
-Three ready-to-use workflows in `/workflows/`:
-
-- **normal_grounding.json** - Object detection + SAM2 segmentation pipeline
-- **batch_normal_grounding.json** - Batch version for processing multiple images
-- **mask_grounding.json** - Direct mask generation using SA2VA (faster for segmentation)
-
-Load these in ComfyUI to see the nodes in action.
+- **normal_grounding.json** - Detection + SAM2 segmentation
+- **batch_normal_grounding.json** - Multi-image processing
+- **mask_grounding.json** - Direct SA2VA masking
 
 ## Advanced Features
 
-**Detection Modes:**
-- `single_box_mode` - Returns only highest-scoring detection (useful for referring expressions)
-- `single_box_per_prompt_mode` - Returns best detection per label
-
-**Output Formats:**
-- `list_only` - Simple bbox list (SAM2-compatible)
-- `dict_with_data` - Includes labels and confidence scores
-
-**Smart Caching:**
-- Models cached in memory after first load
-- Instant reload on subsequent uses
-- Cache key includes model type and configuration
+**Detection modes:** `single_box_mode` (top result only) • `single_box_per_prompt_mode` (best per label)
+**Output formats:** `list_only` (SAM2-compatible) • `dict_with_data` (with labels/scores)
+**Prompt format:** Use periods for multiple labels `"dog. cat."` • Use commas for single label `"small, brown dog"`
 
 ## Credits
 
