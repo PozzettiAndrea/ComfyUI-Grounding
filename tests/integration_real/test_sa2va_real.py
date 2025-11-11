@@ -80,7 +80,11 @@ def test_sa2va_1b_segmentation(mock_comfy_environment, small_image):
     assert masks.shape[0] > 0  # At least one mask
     assert overlaid_mask is not None
     assert overlaid_mask.shape == small_image.shape
-    assert isinstance(text, str)
-    assert len(text) > 0  # SA2VA should generate text
+    # SA2VA returns a list of texts (one per batch item)
+    assert isinstance(text, list)
+    assert len(text) > 0
+    text_value = text[0]  # Get first batch's text
+    assert isinstance(text_value, str)
+    assert len(text_value) > 0  # SA2VA should generate text
 
     print(f"Test passed: SA2VA generated {masks.shape[0]} mask(s) and text output")
