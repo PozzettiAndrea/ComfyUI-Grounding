@@ -6,7 +6,9 @@
 
 🎯 **8 Nodes Total** - 2 Loaders + 2 Detectors + 2 SAM2 + 2 Utilities
 
-🚀 **5 Model Families** - GroundingDINO, MM-GroundingDINO, OWLv2, Florence-2, YOLO-World
+🚀 **6 Model Families** - GroundingDINO, MM-GroundingDINO, OWLv2, Florence-2, YOLO-World, SA2VA
+
+🤖 **33 Models** - 19 bbox detection + 6 mask generation + 8 SAM2 variants
 
 💾 **Smart Caching** - Instant reload
 
@@ -14,7 +16,34 @@
 
 🎭 **Built-in Masks** - No separate BboxToMask node needed
 
-## Quick Start
+## Visual Demos
+
+### Model Switching
+Switch between 19+ detection models with a single dropdown. One node for everything.
+
+![Model Switching](docs/model_switching.gif)
+
+### SA2VA Vision-Language Segmentation
+Unique feature: generates segmentation masks AND text descriptions from prompts.
+
+![SA2VA in Action](docs/sa2va.gif)
+
+### SAM2 Support
+High-quality segmentation with multiple SAM2 variants and precision options.
+
+![SAM2 Segmentation](docs/sam2_support.gif)
+
+### Batch Processing
+Process multiple images simultaneously with all nodes supporting batch operations.
+
+![Batch Processing](docs/batch_processing.gif)
+
+### Label Splitting Logic
+Control label separation: use periods for multiple labels, commas for single compound labels.
+
+![Prompt Separation Logic](docs/prompt_separation_logic.gif)
+
+## Installation
 
 ```bash
 cd ComfyUI/custom_nodes/
@@ -22,6 +51,16 @@ git clone https://github.com/PozzettiAndrea/ComfyUI-Grounding
 cd ComfyUI-Grounding
 pip install -r requirements.txt
 ```
+
+**On first ComfyUI startup:**
+- Example assets auto-copied to `ComfyUI/input/`
+- Example workflows auto-copied to user workflows with "ComfyUI-Grounding_" prefix
+
+**Optional: Flash Attention (faster inference)**
+```bash
+pip install flash-attn --no-build-isolation
+```
+Requires CUDA GPU, takes 5-10 minutes to compile. Significantly speeds up Florence-2 and SA2VA models.
 
 ## The Nodes
 
@@ -88,8 +127,20 @@ Universal detector for all models with bbox/mask output.
 <div style="font-size: 0.9em; line-height: 1.4;">
 
 Load mask generation models:
-- Florence-2 Seg (Base/Large) - Direct segmentation masks
-- SA2VA (1B/4B/8B/26B) - Visual grounding with text output
+
+**Florence-2 Segmentation (2 models)**
+- Base (0.23B params) - microsoft/Florence-2-base
+- Large (0.77B params) - microsoft/Florence-2-large
+- Direct segmentation masks from text prompts
+
+**SA2VA Vision-Language (4 models)**
+- 1B - ByteDance/Sa2VA-1B
+- 4B - ByteDance/Sa2VA-4B
+- 8B - ByteDance/Sa2VA-8B
+- 26B - ByteDance/Sa2VA-26B
+- Visual grounding with detailed text descriptions
+- Requires `trust_remote_code=True`
+- Supports fp16/bf16/fp32 precision options
 </div>
 
 #### 4. Grounding Mask Detector
@@ -103,7 +154,22 @@ Direct mask generation from text prompts. Outputs masks, overlaid images, and ge
 #### 5. Download and Load SAM2 Model
 <div style="font-size: 0.9em; line-height: 1.4;">
 
-Load SAM2 models (base/large/small/tiny) for high-quality segmentation.
+Load SAM2 models for high-quality segmentation:
+
+**SAM2 (4 variants)**
+- sam2_hiera_base_plus.safetensors
+- sam2_hiera_large.safetensors
+- sam2_hiera_small.safetensors
+- sam2_hiera_tiny.safetensors
+
+**SAM2.1 (4 variants - improved)**
+- sam2.1_hiera_base_plus.safetensors
+- sam2.1_hiera_large.safetensors
+- sam2.1_hiera_small.safetensors
+- sam2.1_hiera_tiny.safetensors
+
+Auto-downloads from HuggingFace (Kijai/sam2-safetensors) if not found locally.
+Supports fp16/bf16/fp32 precision and 3 segmentor modes: single_image, video, automaskgenerator.
 </div>
 
 #### 6. SAM2 Segmentation
@@ -138,6 +204,21 @@ Three ready-to-use workflows in `/workflows/`:
 - **mask_grounding.json** - Direct mask generation using SA2VA (faster for segmentation)
 
 Load these in ComfyUI to see the nodes in action.
+
+## Advanced Features
+
+**Detection Modes:**
+- `single_box_mode` - Returns only highest-scoring detection (useful for referring expressions)
+- `single_box_per_prompt_mode` - Returns best detection per label
+
+**Output Formats:**
+- `list_only` - Simple bbox list (SAM2-compatible)
+- `dict_with_data` - Includes labels and confidence scores
+
+**Smart Caching:**
+- Models cached in memory after first load
+- Instant reload on subsequent uses
+- Cache key includes model type and configuration
 
 ## Tips
 
