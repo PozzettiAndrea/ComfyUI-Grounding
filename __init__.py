@@ -45,12 +45,12 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "GroundingModelLoader": "Grounding Model Loader",
+    "GroundingModelLoader": "Grounding Model (down)Loader",
     "GroundingDetector": "Grounding Detector",
     "BboxVisualizer": "Bounding Box Visualizer",
     "DownloadAndLoadSAM2Model": "(Down)Load SAM2Model",
     "Sam2Segmentation": "Sam2 Segmentation",
-    "GroundingMaskModelLoader": "Grounding Mask Model Loader",
+    "GroundingMaskModelLoader": "Grounding Mask Model (down)Loader",
     "GroundingMaskDetector": "Grounding Mask Detector",
     "BatchCropAndPadFromMask": "Batch Crop and Pad From Mask",
 }
