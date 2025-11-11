@@ -16,8 +16,8 @@ if 'pytest' not in sys.modules:
         GroundingModelLoader,
         GroundingDetector,
         BboxVisualizer,
-        DownloadAndLoadSAM2Model,
-        Sam2Segmentation,
+        DownLoadSAM2Model,
+        Sam2Segment,
         GroundingMaskModelLoader,
         GroundingMaskDetector,
         BatchCropAndPadFromMask,
@@ -27,8 +27,8 @@ else:
     GroundingModelLoader = None
     GroundingDetector = None
     BboxVisualizer = None
-    DownloadAndLoadSAM2Model = None
-    Sam2Segmentation = None
+    DownLoadSAM2Model = None
+    Sam2Segment = None
     GroundingMaskModelLoader = None
     GroundingMaskDetector = None
     BatchCropAndPadFromMask = None
@@ -37,8 +37,8 @@ NODE_CLASS_MAPPINGS = {
     "GroundingModelLoader": GroundingModelLoader,
     "GroundingDetector": GroundingDetector,
     "BboxVisualizer": BboxVisualizer,
-    "DownloadAndLoadSAM2Model": DownloadAndLoadSAM2Model,
-    "Sam2Segmentation": Sam2Segmentation,
+    "DownLoadSAM2Model": DownLoadSAM2Model,
+    "Sam2Segment": Sam2Segment,
     "GroundingMaskModelLoader": GroundingMaskModelLoader,
     "GroundingMaskDetector": GroundingMaskDetector,
     "BatchCropAndPadFromMask": BatchCropAndPadFromMask,
@@ -48,8 +48,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "GroundingModelLoader": "Grounding Model (down)Loader",
     "GroundingDetector": "Grounding Detector",
     "BboxVisualizer": "Bounding Box Visualizer",
-    "DownloadAndLoadSAM2Model": "SAM2Model (down)Loader",
-    "Sam2Segmentation": "Sam2 Segment",
+    "DownLoadSAM2Model": "SAM2Model (down)Loader",
+    "Sam2Segment": "Sam2 Segment",
     "GroundingMaskModelLoader": "Grounding Mask Model (down)Loader",
     "GroundingMaskDetector": "Grounding Mask Detector",
     "BatchCropAndPadFromMask": "Batch Crop and Pad From Mask",

@@ -13,8 +13,8 @@ def test_node_class_mappings_exists(mock_comfy_environment):
         "GroundingModelLoader",
         "GroundingDetector",
         "BboxVisualizer",
-        "DownloadAndLoadSAM2Model",
-        "Sam2Segmentation",
+        "DownLoadSAM2Model",
+        "Sam2Segment",
         "GroundingMaskModelLoader",
         "GroundingMaskDetector"
     ]
