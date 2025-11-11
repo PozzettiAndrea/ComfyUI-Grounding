@@ -35,7 +35,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install pytest pytest-cov pytest-mock pytest-asyncio
         pip install opencv-python-headless
-        pip install -r requirements.txt
+        pip install -r .github/requirements-ci.txt
         pip install -r requirements-dev.txt
 
     - name: Create model cache directory
