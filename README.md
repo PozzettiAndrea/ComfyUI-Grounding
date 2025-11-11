@@ -1,6 +1,6 @@
 # ComfyUI-Grounding
 
-**Grounding for dummies, simplest workflow**
+**Grounding toolbox**
 
 ![Simple Workflow](docs/simple.png)
 
@@ -24,12 +24,11 @@ Switch between 19+ detection models with a single dropdown. One node for everyth
 ![Model Switching](docs/model_switching.gif)
 
 ### SA2VA Vision-Language Segmentation
-Unique feature: generates segmentation masks AND text descriptions from prompts.
+When Florence2 isn't enough. Sa2va has VERY advanced semantic understanding and reasoning capabilities.
 
 ![SA2VA in Action](docs/sa2va.gif)
 
 ### SAM2 Support
-High-quality segmentation with multiple SAM2 variants and precision options.
 
 ![SAM2 Segmentation](docs/sam2_support.gif)
 
@@ -45,52 +44,16 @@ Control label separation: use periods for multiple labels, commas for single com
 
 ## Installation
 
-```bash
-cd ComfyUI/custom_nodes/
-git clone https://github.com/PozzettiAndrea/ComfyUI-Grounding
-cd ComfyUI-Grounding
-pip install -r requirements.txt
-```
-
 **On first ComfyUI startup:**
 - Example assets auto-copied to `ComfyUI/input/`
 - Example workflows auto-copied to user workflows with "ComfyUI-Grounding_" prefix
-
-**Optional: Flash Attention (faster inference)**
-```bash
-pip install flash-attn --no-build-isolation
-```
-Requires CUDA GPU, takes 5-10 minutes to compile. Significantly speeds up Florence-2 and SA2VA models.
 
 ## The Nodes
 
 ### Detection Nodes
 
-#### 1. Grounding Model Loader
-Load any of 15+ models from a single dropdown.
-
-<div style="font-size: 0.75em; line-height: 1.4;">
-
-  1. GroundingDINO: SwinT OGC (694MB) - IDEA-Research/grounding-dino-tiny
-  2. GroundingDINO: SwinB (938MB) - IDEA-Research/grounding-dino-base
-  3. MM-GroundingDINO: Tiny O365+GoldG (50.4 mAP) - openmmlab-community/mm_grounding_dino_tiny_o365v1_goldg
-  4. MM-GroundingDINO: Tiny O365+GoldG+GRIT (50.5 mAP) - openmmlab-community/mm_grounding_dino_tiny_o365v1_goldg_grit
-  5. MM-GroundingDINO: Tiny O365+GoldG+V3Det (50.6 mAP) - openmmlab-community/mm_grounding_dino_tiny_o365v1_goldg_v3det
-  6. MM-GroundingDINO: Base O365+GoldG+V3Det (52.5 mAP) - openmmlab-community/mm_grounding_dino_base_o365v1_goldg_v3det
-  7. MM-GroundingDINO: Base All Datasets (59.5 mAP) - openmmlab-community/mm_grounding_dino_base_all
-  8. MM-GroundingDINO: Large O365v2+OIv6+GoldG (53.0 mAP) - openmmlab-community/mm_grounding_dino_large_o365v2_oiv6_goldg
-  9. MM-GroundingDINO: Large All Datasets (60.3 mAP) - openmmlab-community/mm_grounding_dino_large_all
-  10. OWLv2: Base Patch16 - google/owlv2-base-patch16
-  11. OWLv2: Large Patch14 - google/owlv2-large-patch14
-  12. OWLv2: Base Patch16 Ensemble - google/owlv2-base-patch16-ensemble
-  13. OWLv2: Large Patch14 Ensemble - google/owlv2-large-patch14-ensemble
-  14. Florence-2: Base (0.23B params) - microsoft/Florence-2-base
-  15. Florence-2: Large (0.77B params) - microsoft/Florence-2-large
-  16. YOLO-World: v8s (Small) - yolov8s-worldv2.pt
-  17. YOLO-World: v8m (Medium) - yolov8m-worldv2.pt
-  18. YOLO-World: v8l (Large) - yolov8l-worldv2.pt
-  19. YOLO-World: v8x (Extra Large) - yolov8x-worldv2.pt
-</div>
+#### 1. Grounding Model (down)Loader
+Load any of 15+ models from a single dropdown. See footnotes for full list
 
 #### 2. Grounding Detector
 Universal detector for all models with bbox/mask output.
@@ -112,33 +75,18 @@ Universal detector for all models with bbox/mask output.
 - All nodes support batches
 </div>
 
-#### Florence-2 Attention Modes
-
-<div style="font-size: 0.9em; line-height: 1.4;">
-
-- `eager` - Most compatible (default)
-- `sdpa` - Faster on PyTorch 2.0+
-- `flash_attention_2` - Fastest on A100/H100
-</div>
-
 ### Mask Generation Nodes
 
-#### 3. Grounding Mask Loader
+#### 3. Grounding Mask (down)Loader
 <div style="font-size: 0.9em; line-height: 1.4;">
 
 Load mask generation models:
 
 **Florence-2 Segmentation (2 models)**
-- Base (0.23B params) - microsoft/Florence-2-base
-- Large (0.77B params) - microsoft/Florence-2-large
 - Direct segmentation masks from text prompts
 
 **SA2VA Vision-Language (4 models)**
-- 1B - ByteDance/Sa2VA-1B
-- 4B - ByteDance/Sa2VA-4B
-- 8B - ByteDance/Sa2VA-8B
-- 26B - ByteDance/Sa2VA-26B
-- Visual grounding with detailed text descriptions
+- Visual grounding with advanced semantic understanding
 - Requires `trust_remote_code=True`
 - Supports fp16/bf16/fp32 precision options
 </div>
@@ -151,28 +99,18 @@ Direct mask generation from text prompts. Outputs masks, overlaid images, and ge
 
 ### SAM2 Segmentation Nodes
 
-#### 5. Download and Load SAM2 Model
+#### 5. SAM2 Model (down)Loader
 <div style="font-size: 0.9em; line-height: 1.4;">
 
 Load SAM2 models for high-quality segmentation:
 
-**SAM2 (4 variants)**
-- sam2_hiera_base_plus.safetensors
-- sam2_hiera_large.safetensors
-- sam2_hiera_small.safetensors
-- sam2_hiera_tiny.safetensors
-
-**SAM2.1 (4 variants - improved)**
-- sam2.1_hiera_base_plus.safetensors
-- sam2.1_hiera_large.safetensors
-- sam2.1_hiera_small.safetensors
-- sam2.1_hiera_tiny.safetensors
+**SAM2/2.1 (4 variants)**
 
 Auto-downloads from HuggingFace (Kijai/sam2-safetensors) if not found locally.
 Supports fp16/bf16/fp32 precision and 3 segmentor modes: single_image, video, automaskgenerator.
 </div>
 
-#### 6. SAM2 Segmentation
+#### 6. SAM2 Segment
 <div style="font-size: 0.9em; line-height: 1.4;">
 
 Segment using bboxes from grounding models or point coordinates.
@@ -220,12 +158,6 @@ Load these in ComfyUI to see the nodes in action.
 - Instant reload on subsequent uses
 - Cache key includes model type and configuration
 
-## Tips
-
-**Prompt Format:**
-- Use periods for multiple labels → `"laser. crocodile."`
-- Use commas to keep a single label → `"laser, crocodile"`
-
 ## Credits
 
 - [GroundingDINO](https://github.com/IDEA-Research/GroundingDINO) - IDEA-Research
@@ -236,3 +168,29 @@ Load these in ComfyUI to see the nodes in action.
 ## License
 
 MIT License
+
+## Footnotes
+Full list of models:
+
+<div style="font-size: 0.75em; line-height: 1.4;">
+
+  1. GroundingDINO: SwinT OGC (694MB) - IDEA-Research/grounding-dino-tiny
+  2. GroundingDINO: SwinB (938MB) - IDEA-Research/grounding-dino-base
+  3. MM-GroundingDINO: Tiny O365+GoldG (50.4 mAP) - openmmlab-community/mm_grounding_dino_tiny_o365v1_goldg
+  4. MM-GroundingDINO: Tiny O365+GoldG+GRIT (50.5 mAP) - openmmlab-community/mm_grounding_dino_tiny_o365v1_goldg_grit
+  5. MM-GroundingDINO: Tiny O365+GoldG+V3Det (50.6 mAP) - openmmlab-community/mm_grounding_dino_tiny_o365v1_goldg_v3det
+  6. MM-GroundingDINO: Base O365+GoldG+V3Det (52.5 mAP) - openmmlab-community/mm_grounding_dino_base_o365v1_goldg_v3det
+  7. MM-GroundingDINO: Base All Datasets (59.5 mAP) - openmmlab-community/mm_grounding_dino_base_all
+  8. MM-GroundingDINO: Large O365v2+OIv6+GoldG (53.0 mAP) - openmmlab-community/mm_grounding_dino_large_o365v2_oiv6_goldg
+  9. MM-GroundingDINO: Large All Datasets (60.3 mAP) - openmmlab-community/mm_grounding_dino_large_all
+  10. OWLv2: Base Patch16 - google/owlv2-base-patch16
+  11. OWLv2: Large Patch14 - google/owlv2-large-patch14
+  12. OWLv2: Base Patch16 Ensemble - google/owlv2-base-patch16-ensemble
+  13. OWLv2: Large Patch14 Ensemble - google/owlv2-large-patch14-ensemble
+  14. Florence-2: Base (0.23B params) - microsoft/Florence-2-base
+  15. Florence-2: Large (0.77B params) - microsoft/Florence-2-large
+  16. YOLO-World: v8s (Small) - yolov8s-worldv2.pt
+  17. YOLO-World: v8m (Medium) - yolov8m-worldv2.pt
+  18. YOLO-World: v8l (Large) - yolov8l-worldv2.pt
+  19. YOLO-World: v8x (Extra Large) - yolov8x-worldv2.pt
+</div>
