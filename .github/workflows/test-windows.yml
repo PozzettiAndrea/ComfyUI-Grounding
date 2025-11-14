@@ -43,6 +43,25 @@ jobs:
       env:
         PYTHONPATH: ${{ github.workspace }}
 
+    - name: Create model cache directory
+      run: |
+        New-Item -Path "$env:USERPROFILE\.cache\huggingface" -ItemType Directory -Force
+
+    - name: Cache models
+      uses: actions/cache@v4
+      with:
+        path: ~\.cache\huggingface
+        key: ${{ runner.os }}-huggingface-models-${{ hashFiles('tests/integration_real/*.py') }}
+        restore-keys: |
+          ${{ runner.os }}-huggingface-models-
+
+    - name: Run real model integration tests
+      run: |
+        pytest tests/integration_real/ -v -m real_model --tb=short
+      env:
+        PYTHONPATH: ${{ github.workspace }}
+        HF_HUB_DISABLE_TELEMETRY: 1
+
     - name: Upload coverage reports
       uses: codecov/codecov-action@v4
       with:
