@@ -3,22 +3,136 @@ ComfyUI-Grounding: Unified object detection nodes for ComfyUI
 Reorganized architecture with thin wrapper nodes delegating to model implementations
 """
 
-import torch
-import numpy as np
-import random
-import os
+import sys
+import traceback
+
+# Track import failures for diagnostics
+IMPORT_ERRORS = []
+
+def log_import_error(module_name, error):
+    """Log import errors for diagnostics"""
+    error_msg = f"Failed to import {module_name}: {str(error)}"
+    IMPORT_ERRORS.append(error_msg)
+    print(f"[ComfyUI-Grounding] [WARNING] {error_msg}")
+
+def log_import_success(module_name):
+    """Log successful imports"""
+    print(f"[ComfyUI-Grounding] [OK] Imported {module_name}")
+
+# Basic Python dependencies
+print("[ComfyUI-Grounding] Loading nodes module...")
+try:
+    import torch
+    import numpy as np
+    import random
+    import os
+    log_import_success("basic dependencies (torch, numpy, etc.)")
+except ImportError as e:
+    log_import_error("basic dependencies", e)
+    raise
 
 # Import configurations
-from .config import MODEL_REGISTRY, MASK_MODEL_REGISTRY
-from .utils.cache import MODEL_CACHE
-from .utils import draw_boxes, boxes_to_masks
+try:
+    from .config import MODEL_REGISTRY, MASK_MODEL_REGISTRY
+    log_import_success("config (MODEL_REGISTRY, MASK_MODEL_REGISTRY)")
+except Exception as e:
+    log_import_error("config", e)
+    print(f"[ComfyUI-Grounding] Traceback:\n{traceback.format_exc()}")
+    raise
 
-# Import model loaders and detectors
-from . import grounding_dino, owlv2, florence2, yolo_world, florence2_seg, sa2va
-from . import sam2, visualizer
+# Import utils
+try:
+    from .utils.cache import MODEL_CACHE
+    log_import_success("utils.cache")
+except Exception as e:
+    log_import_error("utils.cache", e)
+    print(f"[ComfyUI-Grounding] Traceback:\n{traceback.format_exc()}")
+    raise
+
+try:
+    from .utils import draw_boxes, boxes_to_masks
+    log_import_success("utils (draw_boxes, boxes_to_masks)")
+except Exception as e:
+    log_import_error("utils", e)
+    print(f"[ComfyUI-Grounding] Traceback:\n{traceback.format_exc()}")
+    raise
+
+# Import model modules - each wrapped separately for better diagnostics
+try:
+    from . import grounding_dino
+    log_import_success("grounding_dino")
+except Exception as e:
+    grounding_dino = None
+    log_import_error("grounding_dino", e)
+    print(f"[ComfyUI-Grounding] Traceback:\n{traceback.format_exc()}")
+
+try:
+    from . import owlv2
+    log_import_success("owlv2")
+except Exception as e:
+    owlv2 = None
+    log_import_error("owlv2", e)
+    print(f"[ComfyUI-Grounding] Traceback:\n{traceback.format_exc()}")
+
+try:
+    from . import florence2
+    log_import_success("florence2")
+except Exception as e:
+    florence2 = None
+    log_import_error("florence2", e)
+    print(f"[ComfyUI-Grounding] Traceback:\n{traceback.format_exc()}")
+
+try:
+    from . import yolo_world
+    log_import_success("yolo_world")
+except Exception as e:
+    yolo_world = None
+    log_import_error("yolo_world", e)
+    print(f"[ComfyUI-Grounding] Traceback:\n{traceback.format_exc()}")
+
+try:
+    from . import florence2_seg
+    log_import_success("florence2_seg")
+except Exception as e:
+    florence2_seg = None
+    log_import_error("florence2_seg", e)
+    print(f"[ComfyUI-Grounding] Traceback:\n{traceback.format_exc()}")
+
+try:
+    from . import sa2va
+    log_import_success("sa2va")
+except Exception as e:
+    sa2va = None
+    log_import_error("sa2va", e)
+    print(f"[ComfyUI-Grounding] Traceback:\n{traceback.format_exc()}")
+
+try:
+    from . import sam2
+    log_import_success("sam2")
+except Exception as e:
+    sam2 = None
+    log_import_error("sam2", e)
+    print(f"[ComfyUI-Grounding] Traceback:\n{traceback.format_exc()}")
+
+try:
+    from . import visualizer
+    log_import_success("visualizer")
+except Exception as e:
+    visualizer = None
+    log_import_error("visualizer", e)
+    print(f"[ComfyUI-Grounding] Traceback:\n{traceback.format_exc()}")
 
 # Get the ComfyUI-Grounding root directory (parent of nodes/)
 script_directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Report import status
+if IMPORT_ERRORS:
+    print(f"[ComfyUI-Grounding] [WARNING] {len(IMPORT_ERRORS)} import error(s) occurred:")
+    for error in IMPORT_ERRORS:
+        print(f"  - {error}")
+    print("[ComfyUI-Grounding] Some nodes may not function correctly.")
+else:
+    print("[ComfyUI-Grounding] [OK] All modules imported successfully")
 
 
 # ============================================================================
@@ -33,20 +147,22 @@ class GroundingModelLoader:
 
     @classmethod
     def INPUT_TYPES(cls):
+        optional_params = {}
+        # Only add model-specific params if modules loaded successfully
+        if grounding_dino is not None:
+            optional_params.update(grounding_dino.params.LOADER_PARAMS.get("optional", {}))
+        if florence2 is not None:
+            optional_params.update(florence2.params.LOADER_PARAMS.get("optional", {}))
+        if yolo_world is not None:
+            optional_params.update(yolo_world.params.LOADER_PARAMS.get("optional", {}))
+
         return {
             "required": {
                 "model": (list(MODEL_REGISTRY.keys()), {
                     "default": "Florence-2: Base (0.23B params)",
                 }),
             },
-            "optional": {
-                # GroundingDINO parameters
-                **grounding_dino.params.LOADER_PARAMS.get("optional", {}),
-                # Florence-2 parameters
-                **florence2.params.LOADER_PARAMS.get("optional", {}),
-                # YOLO-World parameters (none currently in loader)
-                **yolo_world.params.LOADER_PARAMS.get("optional", {}),
-            }
+            "optional": optional_params
         }
 
     RETURN_TYPES = ("GROUNDING_MODEL",)
@@ -62,26 +178,34 @@ class GroundingModelLoader:
         # Create cache key
         cache_key = f"{model_type}_{model}"
         if cache_key in MODEL_CACHE:
-            print(f"✅ Loading {model} from cache")
+            print(f"[OK] Loading {model} from cache")
             return (MODEL_CACHE[cache_key],)
 
-        print(f"📂 Loading {model}...")
+        print(f"Loading {model}...")
 
         # Route to appropriate loader
         if model_type == "grounding_dino":
+            if grounding_dino is None:
+                raise RuntimeError(f"Cannot load {model}: grounding_dino module failed to import. Check console for import errors.")
             model_dict = grounding_dino.load_grounding_dino(model, config)
         elif model_type == "owlv2":
+            if owlv2 is None:
+                raise RuntimeError(f"Cannot load {model}: owlv2 module failed to import. Check console for import errors.")
             model_dict = owlv2.load_owlv2(model, config)
         elif model_type == "florence2":
+            if florence2 is None:
+                raise RuntimeError(f"Cannot load {model}: florence2 module failed to import. Check console for import errors.")
             model_dict = florence2.load_florence2(model, config)
         elif model_type == "yolo_world":
+            if yolo_world is None:
+                raise RuntimeError(f"Cannot load {model}: yolo_world module failed to import. Check console for import errors.")
             model_dict = yolo_world.load_yolo_world(model, config)
         else:
             raise ValueError(f"Unknown model type: {model_type}")
 
         # Cache the loaded model
         MODEL_CACHE[cache_key] = model_dict
-        print(f"✅ Successfully loaded {model}")
+        print(f"[OK] Successfully loaded {model}")
 
         return (model_dict,)
 
@@ -94,6 +218,35 @@ class GroundingDetector:
 
     @classmethod
     def INPUT_TYPES(cls):
+        optional_params = {
+            "single_box_mode": ("BOOLEAN", {
+                "default": False,
+                "tooltip": "Return only the highest-scoring detection. Use for referring expressions (e.g., 'the red car on the left')"
+            }),
+            "single_box_per_prompt_mode": ("BOOLEAN", {
+                "default": False,
+                "tooltip": "Return highest-scoring detection for each prompt/label (e.g., 'banana. orange' returns best banana and best orange). Ignored if single_box_mode is True"
+            }),
+            "bbox_output_format": (["list_only", "dict_with_data"], {
+                "default": "list_only",
+                "tooltip": "list_only: SAM2-compatible | dict_with_data: includes labels/scores"
+            }),
+            "seed": ("INT", {
+                "default": 42,
+                "min": 0,
+                "max": 0xffffffff,  # 2^32 - 1, max for numpy.random.seed
+                "tooltip": "Fixed seed for reproducible results (affects mask visualization colors and model randomness)"
+            }),
+        }
+
+        # Only add model-specific params if modules loaded successfully
+        if grounding_dino is not None:
+            optional_params.update(grounding_dino.params.DETECTOR_PARAMS.get("optional", {}))
+        if florence2 is not None:
+            optional_params.update(florence2.params.DETECTOR_PARAMS.get("optional", {}))
+        if yolo_world is not None:
+            optional_params.update(yolo_world.params.DETECTOR_PARAMS.get("optional", {}))
+
         return {
             "required": {
                 "model": ("GROUNDING_MODEL",),
@@ -111,32 +264,7 @@ class GroundingDetector:
                     "tooltip": "Confidence threshold for detections. Typical: 0.2-0.35 (permissive), 0.35-0.5 (balanced), 0.5+ (strict)"
                 }),
             },
-            "optional": {
-                "single_box_mode": ("BOOLEAN", {
-                    "default": False,
-                    "tooltip": "Return only the highest-scoring detection. Use for referring expressions (e.g., 'the red car on the left')"
-                }),
-                "single_box_per_prompt_mode": ("BOOLEAN", {
-                    "default": False,
-                    "tooltip": "Return highest-scoring detection for each prompt/label (e.g., 'banana. orange' returns best banana and best orange). Ignored if single_box_mode is True"
-                }),
-                "bbox_output_format": (["list_only", "dict_with_data"], {
-                    "default": "list_only",
-                    "tooltip": "list_only: SAM2-compatible | dict_with_data: includes labels/scores"
-                }),
-                # GroundingDINO parameters
-                **grounding_dino.params.DETECTOR_PARAMS.get("optional", {}),
-                # Florence-2 parameters
-                **florence2.params.DETECTOR_PARAMS.get("optional", {}),
-                # YOLO-World parameters
-                **yolo_world.params.DETECTOR_PARAMS.get("optional", {}),
-                "seed": ("INT", {
-                    "default": 42,
-                    "min": 0,
-                    "max": 0xffffffff,  # 2^32 - 1, max for numpy.random.seed
-                    "tooltip": "Fixed seed for reproducible results (affects mask visualization colors and model randomness)"
-                }),
-            }
+            "optional": optional_params
         }
 
     RETURN_TYPES = ("BBOX", "IMAGE", "STRING", "MASK")
@@ -167,22 +295,30 @@ class GroundingDetector:
 
         # Route to appropriate detection method
         if model_type == "grounding_dino":
+            if grounding_dino is None:
+                raise RuntimeError(f"Cannot detect with {model_type}: grounding_dino module failed to import. Check console for import errors.")
             return grounding_dino.detect_grounding_dino(
                 model, image, prompt, confidence_threshold, text_threshold,
                 single_box_mode, single_box_per_prompt_mode, bbox_output_format, output_masks, self._format_output
             )
         elif model_type == "owlv2":
+            if owlv2 is None:
+                raise RuntimeError(f"Cannot detect with {model_type}: owlv2 module failed to import. Check console for import errors.")
             return owlv2.detect_owlv2(
                 model, image, prompt, confidence_threshold,
                 single_box_mode, single_box_per_prompt_mode, bbox_output_format, output_masks, self._format_output
             )
         elif model_type == "florence2":
+            if florence2 is None:
+                raise RuntimeError(f"Cannot detect with {model_type}: florence2 module failed to import. Check console for import errors.")
             return florence2.detect_florence2(
                 model, image, prompt, confidence_threshold, single_box_mode,
                 single_box_per_prompt_mode, bbox_output_format, output_masks, florence2_max_tokens,
                 florence2_num_beams, self._format_output
             )
         elif model_type == "yolo_world":
+            if yolo_world is None:
+                raise RuntimeError(f"Cannot detect with {model_type}: yolo_world module failed to import. Check console for import errors.")
             return yolo_world.detect_yolo_world(
                 model, image, prompt, confidence_threshold, single_box_mode,
                 single_box_per_prompt_mode, bbox_output_format, output_masks, yolo_iou, yolo_agnostic_nms,
@@ -237,18 +373,20 @@ class GroundingMaskModelLoader:
 
     @classmethod
     def INPUT_TYPES(cls):
+        optional_params = {}
+        # Only add model-specific params if modules loaded successfully
+        if florence2_seg is not None:
+            optional_params.update(florence2_seg.params.LOADER_PARAMS.get("optional", {}))
+        if sa2va is not None:
+            optional_params.update(sa2va.params.LOADER_PARAMS.get("optional", {}))
+
         return {
             "required": {
                 "model": (list(MASK_MODEL_REGISTRY.keys()), {
                     "default": "Florence-2: Base (Segmentation)",
                 }),
             },
-            "optional": {
-                # Florence-2 Seg parameters
-                **florence2_seg.params.LOADER_PARAMS.get("optional", {}),
-                # SA2VA parameters
-                **sa2va.params.LOADER_PARAMS.get("optional", {}),
-            }
+            "optional": optional_params
         }
 
     RETURN_TYPES = ("MASK_MODEL",)
@@ -264,15 +402,19 @@ class GroundingMaskModelLoader:
         # Create cache key
         cache_key = f"{model_type}_{model}_dtype_{sa2va_dtype}"
         if cache_key in MODEL_CACHE:
-            print(f"✅ Loading {model} from cache")
+            print(f"[OK] Loading {model} from cache")
             return (MODEL_CACHE[cache_key],)
 
-        print(f"📂 Loading {model}...")
+        print(f"Loading {model}...")
 
         # Route to appropriate loader
         if model_type == "florence2_seg":
+            if florence2_seg is None:
+                raise RuntimeError(f"Cannot load {model}: florence2_seg module failed to import. Check console for import errors.")
             model_dict = florence2_seg.load_florence2_seg(model, config)
         elif model_type == "sa2va":
+            if sa2va is None:
+                raise RuntimeError(f"Cannot load {model}: sa2va module failed to import. Check console for import errors.")
             model_dict = sa2va.load_sa2va(model, config, sa2va_dtype)
         elif model_type == "lisa":
             raise NotImplementedError("LISA support coming soon")
@@ -283,7 +425,7 @@ class GroundingMaskModelLoader:
 
         # Cache the loaded model
         MODEL_CACHE[cache_key] = model_dict
-        print(f"✅ Successfully loaded {model}")
+        print(f"[OK] Successfully loaded {model}")
 
         return (model_dict,)
 
@@ -353,8 +495,8 @@ class GroundingMaskDetector:
             }
         }
 
-    RETURN_TYPES = sa2va.params.RETURN_TYPES
-    RETURN_NAMES = sa2va.params.RETURN_NAMES
+    RETURN_TYPES = ("MASK", "IMAGE", "STRING") if sa2va is None else sa2va.params.RETURN_TYPES
+    RETURN_NAMES = ("masks", "overlaid_mask", "text") if sa2va is None else sa2va.params.RETURN_NAMES
     FUNCTION = "detect"
     CATEGORY = "grounding"
 
@@ -375,12 +517,16 @@ class GroundingMaskDetector:
 
         # Route to appropriate detection method
         if model_type == "florence2_seg":
+            if florence2_seg is None:
+                raise RuntimeError(f"Cannot detect with {model_type}: florence2_seg module failed to import. Check console for import errors.")
             return florence2_seg.detect_florence2_seg(
                 model, image, prompt, confidence_threshold,
                 florence2_max_tokens, florence2_num_beams,
                 self._format_output
             )
         elif model_type == "sa2va":
+            if sa2va is None:
+                raise RuntimeError(f"Cannot detect with {model_type}: sa2va module failed to import. Check console for import errors.")
             return sa2va.detect_sa2va(
                 model, image, prompt, confidence_threshold,
                 sa2va_max_tokens, sa2va_num_beams, self._format_output
@@ -452,15 +598,27 @@ class GroundingMaskDetector:
 class DownLoadSAM2Model:
     @classmethod
     def INPUT_TYPES(s):
+        if sam2 is None:
+            # Return minimal params if sam2 failed to import
+            return {
+                "required": {
+                    "model": (["sam2_model"], {}),
+                    "segmentor": (["auto"], {}),
+                    "device": (["auto"], {}),
+                    "precision": (["auto"], {}),
+                }
+            }
         return sam2.params.LOADER_PARAMS
 
-    RETURN_TYPES = sam2.params.LOADER_RETURN_TYPES
-    RETURN_NAMES = sam2.params.LOADER_RETURN_NAMES
+    RETURN_TYPES = ("SAM2_MODEL",) if sam2 is None else sam2.params.LOADER_RETURN_TYPES
+    RETURN_NAMES = ("model",) if sam2 is None else sam2.params.LOADER_RETURN_NAMES
     FUNCTION = "loadmodel"
     CATEGORY = "SAM2"
 
     def loadmodel(self, model, segmentor, device, precision):
         """Load SAM2 model"""
+        if sam2 is None:
+            raise RuntimeError("Cannot load SAM2 model: sam2 module failed to import. Check console for import errors.")
         sam2_model = sam2.load_sam2(model, segmentor, device, precision, script_directory)
         return (sam2_model,)
 
@@ -471,10 +629,19 @@ class Sam2Segment:
 
     @classmethod
     def INPUT_TYPES(s):
+        if sam2 is None:
+            # Return minimal params if sam2 failed to import
+            return {
+                "required": {
+                    "image": ("IMAGE",),
+                    "sam2_model": ("SAM2_MODEL",),
+                    "keep_model_loaded": ("BOOLEAN", {"default": True}),
+                }
+            }
         return sam2.params.SEGMENTATION_PARAMS
 
-    RETURN_TYPES = sam2.params.SEGMENTATION_RETURN_TYPES
-    RETURN_NAMES = sam2.params.SEGMENTATION_RETURN_NAMES
+    RETURN_TYPES = ("MASK",) if sam2 is None else sam2.params.SEGMENTATION_RETURN_TYPES
+    RETURN_NAMES = ("masks",) if sam2 is None else sam2.params.SEGMENTATION_RETURN_NAMES
     FUNCTION = "segment"
     CATEGORY = "SAM2"
 
@@ -482,6 +649,9 @@ class Sam2Segment:
                 coordinates_negative=None, individual_objects=False, bboxes=None,
                 mask=None, mask_threshold=0.0, max_hole_area=0.0, max_sprinkle_area=0.0):
         """Perform SAM2 segmentation"""
+        if sam2 is None:
+            raise RuntimeError("Cannot perform SAM2 segmentation: sam2 module failed to import. Check console for import errors.")
+
         # Create a reference dict to hold inference_state
         inference_state_ref = {'state': self.inference_state}
 
@@ -508,15 +678,26 @@ class BboxVisualizer:
 
     @classmethod
     def INPUT_TYPES(cls):
+        if visualizer is None:
+            # Return minimal params if visualizer failed to import
+            return {
+                "required": {
+                    "image": ("IMAGE",),
+                    "bboxes": ("BBOX",),
+                    "line_width": ("INT", {"default": 3, "min": 1, "max": 20}),
+                }
+            }
         return visualizer.params.VISUALIZER_PARAMS
 
-    RETURN_TYPES = visualizer.params.RETURN_TYPES
-    RETURN_NAMES = visualizer.params.RETURN_NAMES
+    RETURN_TYPES = ("IMAGE",) if visualizer is None else visualizer.params.RETURN_TYPES
+    RETURN_NAMES = ("image",) if visualizer is None else visualizer.params.RETURN_NAMES
     FUNCTION = "visualize"
     CATEGORY = "grounding"
 
     def visualize(self, image, bboxes, line_width=3):
         """Draw bounding boxes on image (supports batches)"""
+        if visualizer is None:
+            raise RuntimeError("Cannot visualize bboxes: visualizer module failed to import. Check console for import errors.")
         return visualizer.visualize_bboxes(image, bboxes, line_width)
 
 
