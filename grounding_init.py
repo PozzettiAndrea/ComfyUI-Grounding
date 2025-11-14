@@ -103,15 +103,15 @@ def install_js():
 
     # Try to create symlink first (faster and saves space)
     if link_js(src_dir, dst_dir):
-        print("[ComfyUI-Grounding] ✅ JS files linked successfully")
+        print("[ComfyUI-Grounding] [OK] JS files linked successfully")
         return
 
     # Fallback: copy files
     try:
         shutil.copytree(src_dir, dst_dir, dirs_exist_ok=True)
-        print("[ComfyUI-Grounding] ✅ JS files copied successfully")
+        print("[ComfyUI-Grounding] [OK] JS files copied successfully")
     except Exception as e:
-        print(f"[ComfyUI-Grounding] ❌ Failed to install JS files: {e}")
+        print(f"[ComfyUI-Grounding] [ERROR] Failed to install JS files: {e}")
 
 
 def init():

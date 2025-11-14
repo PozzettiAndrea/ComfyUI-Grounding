@@ -21,11 +21,11 @@ if 'pytest' not in sys.modules:
         from .grounding_init import init
         # Initialize web extensions for compatibility with older ComfyUI versions
         init()
-        print("[ComfyUI-Grounding] ✓ Initialization script completed")
+        print("[ComfyUI-Grounding] [OK] Initialization script completed")
     except Exception as e:
         error_msg = f"Initialization script failed: {str(e)}"
         INIT_ERRORS.append(error_msg)
-        print(f"[ComfyUI-Grounding] ⚠️  {error_msg}")
+        print(f"[ComfyUI-Grounding] [WARNING] {error_msg}")
         print(f"[ComfyUI-Grounding] Traceback:\n{traceback.format_exc()}")
 
     # Step 2: Import node classes
@@ -40,12 +40,12 @@ if 'pytest' not in sys.modules:
             GroundingMaskDetector,
             BatchCropAndPadFromMask,
         )
-        print("[ComfyUI-Grounding] ✓ Node classes imported successfully")
+        print("[ComfyUI-Grounding] [OK] Node classes imported successfully")
         INIT_SUCCESS = True
     except Exception as e:
         error_msg = f"Failed to import node classes: {str(e)}"
         INIT_ERRORS.append(error_msg)
-        print(f"[ComfyUI-Grounding] ⚠️  {error_msg}")
+        print(f"[ComfyUI-Grounding] [WARNING] {error_msg}")
         print(f"[ComfyUI-Grounding] Traceback:\n{traceback.format_exc()}")
 
         # Set all to None if import failed
@@ -60,9 +60,9 @@ if 'pytest' not in sys.modules:
 
     # Report final status
     if INIT_SUCCESS:
-        print("[ComfyUI-Grounding] ✅ Loaded successfully!")
+        print("[ComfyUI-Grounding] [OK] Loaded successfully!")
     else:
-        print(f"[ComfyUI-Grounding] ❌ Failed to load ({len(INIT_ERRORS)} error(s)):")
+        print(f"[ComfyUI-Grounding] [ERROR] Failed to load ({len(INIT_ERRORS)} error(s)):")
         for error in INIT_ERRORS:
             print(f"  - {error}")
         print("[ComfyUI-Grounding] Please check the errors above and your installation.")

@@ -13,11 +13,11 @@ def log_import_error(module_name, error):
     """Log import errors for diagnostics"""
     error_msg = f"Failed to import {module_name}: {str(error)}"
     IMPORT_ERRORS.append(error_msg)
-    print(f"[ComfyUI-Grounding] ⚠️  {error_msg}")
+    print(f"[ComfyUI-Grounding] [WARNING] {error_msg}")
 
 def log_import_success(module_name):
     """Log successful imports"""
-    print(f"[ComfyUI-Grounding] ✓ Imported {module_name}")
+    print(f"[ComfyUI-Grounding] [OK] Imported {module_name}")
 
 # Basic Python dependencies
 print("[ComfyUI-Grounding] Loading nodes module...")
@@ -128,12 +128,12 @@ script_directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Report import status
 if IMPORT_ERRORS:
-    print(f"[ComfyUI-Grounding] ⚠️  {len(IMPORT_ERRORS)} import error(s) occurred:")
+    print(f"[ComfyUI-Grounding] [WARNING] {len(IMPORT_ERRORS)} import error(s) occurred:")
     for error in IMPORT_ERRORS:
         print(f"  - {error}")
     print("[ComfyUI-Grounding] Some nodes may not function correctly.")
 else:
-    print("[ComfyUI-Grounding] ✓ All modules imported successfully")
+    print("[ComfyUI-Grounding] [OK] All modules imported successfully")
 
 
 # ============================================================================
@@ -179,10 +179,10 @@ class GroundingModelLoader:
         # Create cache key
         cache_key = f"{model_type}_{model}"
         if cache_key in MODEL_CACHE:
-            print(f"✅ Loading {model} from cache")
+            print(f"[OK] Loading {model} from cache")
             return (MODEL_CACHE[cache_key],)
 
-        print(f"📂 Loading {model}...")
+        print(f"Loading {model}...")
 
         # Route to appropriate loader
         if model_type == "grounding_dino":
@@ -206,7 +206,7 @@ class GroundingModelLoader:
 
         # Cache the loaded model
         MODEL_CACHE[cache_key] = model_dict
-        print(f"✅ Successfully loaded {model}")
+        print(f"[OK] Successfully loaded {model}")
 
         return (model_dict,)
 
@@ -403,10 +403,10 @@ class GroundingMaskModelLoader:
         # Create cache key
         cache_key = f"{model_type}_{model}_dtype_{sa2va_dtype}"
         if cache_key in MODEL_CACHE:
-            print(f"✅ Loading {model} from cache")
+            print(f"[OK] Loading {model} from cache")
             return (MODEL_CACHE[cache_key],)
 
-        print(f"📂 Loading {model}...")
+        print(f"Loading {model}...")
 
         # Route to appropriate loader
         if model_type == "florence2_seg":
@@ -426,7 +426,7 @@ class GroundingMaskModelLoader:
 
         # Cache the loaded model
         MODEL_CACHE[cache_key] = model_dict
-        print(f"✅ Successfully loaded {model}")
+        print(f"[OK] Successfully loaded {model}")
 
         return (model_dict,)
 
