@@ -6,6 +6,31 @@ Tests basic module import functionality without requiring ComfyUI to be installe
 import sys
 import traceback
 
+# Mock ComfyUI dependencies before importing nodes
+# This allows smoke test to run without ComfyUI installed
+mock_folder_paths = type("folder_paths", (), {})()
+mock_folder_paths.models_dir = "/tmp/test_models"
+mock_folder_paths.get_folder_paths = lambda x: ["/tmp/test_models"]
+sys.modules["folder_paths"] = mock_folder_paths
+
+mock_comfy_mm = type("model_management", (), {})()
+mock_comfy_mm.get_torch_device = lambda: "cpu"
+mock_comfy_mm.soft_empty_cache = lambda: None
+mock_comfy_mm.load_models_gpu = lambda x: None
+
+mock_comfy_utils = type("utils", (), {})()
+mock_comfy_utils.load_torch_file = lambda x: {}
+mock_comfy_utils.ProgressBar = type("ProgressBar", (), {})
+mock_comfy_utils.common_upscale = lambda *args, **kwargs: None
+
+mock_comfy = type("comfy", (), {})()
+mock_comfy.model_management = mock_comfy_mm
+mock_comfy.utils = mock_comfy_utils
+
+sys.modules["comfy"] = mock_comfy
+sys.modules["comfy.model_management"] = mock_comfy_mm
+sys.modules["comfy.utils"] = mock_comfy_utils
+
 def test_basic_imports():
     """Test that basic Python dependencies can be imported"""
     print("Testing basic dependencies...")
