@@ -496,8 +496,8 @@ class GroundingMaskDetector:
             }
         }
 
-    RETURN_TYPES = sa2va.params.RETURN_TYPES
-    RETURN_NAMES = sa2va.params.RETURN_NAMES
+    RETURN_TYPES = ("MASK", "IMAGE", "STRING") if sa2va is None else sa2va.params.RETURN_TYPES
+    RETURN_NAMES = ("masks", "overlaid_mask", "text") if sa2va is None else sa2va.params.RETURN_NAMES
     FUNCTION = "detect"
     CATEGORY = "grounding"
 
