@@ -7,7 +7,8 @@ on:
     branches: [main, master, dev]
 
 jobs:
-  test-windows:
+  windows-unit:
+    name: Windows / Unit / ${{ matrix.python-version }}
     runs-on: windows-latest
     strategy:
       matrix:
@@ -43,6 +44,46 @@ jobs:
       env:
         PYTHONPATH: ${{ github.workspace }}
 
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage.xml
+        flags: windows-unit-tests
+        name: codecov-windows-unit-py${{ matrix.python-version }}
+        fail_ci_if_error: false
+
+    - name: Test summary
+      if: always()
+      run: |
+        echo "## Windows Unit Test Results (Python ${{ matrix.python-version }})" >> $env:GITHUB_STEP_SUMMARY
+        echo "[OK] Windows unit tests completed" >> $env:GITHUB_STEP_SUMMARY
+
+  windows-integration:
+    name: Windows / Integration / ${{ matrix.python-version }}
+    runs-on: windows-latest
+    needs: windows-unit
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+      fail-fast: false
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-cov pytest-mock pytest-asyncio
+        pip install -r .github/requirements-ci.txt
+        pip install -r requirements-dev.txt
+
     - name: Create model cache directory
       run: |
         New-Item -Path "$env:USERPROFILE\.cache\huggingface" -ItemType Directory -Force
@@ -62,16 +103,8 @@ jobs:
         PYTHONPATH: ${{ github.workspace }}
         HF_HUB_DISABLE_TELEMETRY: 1
 
-    - name: Upload coverage reports
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./coverage.xml
-        flags: windows-tests
-        name: codecov-windows-py${{ matrix.python-version }}
-        fail_ci_if_error: false
-
     - name: Test summary
       if: always()
       run: |
-        echo "## Windows Test Results (Python ${{ matrix.python-version }})" >> $env:GITHUB_STEP_SUMMARY
-        echo "✅ Windows tests completed" >> $env:GITHUB_STEP_SUMMARY
+        echo "## Windows Integration Test Results (Python ${{ matrix.python-version }})" >> $env:GITHUB_STEP_SUMMARY
+        echo "[OK] Windows integration tests completed" >> $env:GITHUB_STEP_SUMMARY
