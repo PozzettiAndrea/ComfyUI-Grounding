@@ -1,4 +1,4 @@
-name: Unit Tests
+name: Windows Tests
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [main, master, dev]
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  test-windows:
+    runs-on: windows-latest
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
@@ -31,6 +31,12 @@ jobs:
         pip install -r .github/requirements-ci.txt
         pip install -r requirements-dev.txt
 
+    - name: Run smoke test (import check)
+      run: |
+        python -c "import sys; sys.path.insert(0, '.'); print('Testing module import...'); exec(open('tests/smoke_test.py').read())"
+      env:
+        PYTHONPATH: ${{ github.workspace }}
+
     - name: Run unit tests
       run: |
         pytest tests/unit/ -v --cov=nodes --cov-report=xml --cov-report=term-missing
@@ -41,12 +47,12 @@ jobs:
       uses: codecov/codecov-action@v4
       with:
         file: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
+        flags: windows-tests
+        name: codecov-windows-py${{ matrix.python-version }}
         fail_ci_if_error: false
 
     - name: Test summary
       if: always()
       run: |
-        echo "## Test Results (Python ${{ matrix.python-version }})" >> $GITHUB_STEP_SUMMARY
-        echo "✅ Unit tests completed" >> $GITHUB_STEP_SUMMARY
+        echo "## Windows Test Results (Python ${{ matrix.python-version }})" >> $env:GITHUB_STEP_SUMMARY
+        echo "✅ Windows tests completed" >> $env:GITHUB_STEP_SUMMARY
