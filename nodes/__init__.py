@@ -58,19 +58,11 @@ except Exception as e:
     raise
 
 # Import model modules - each wrapped separately for better diagnostics
-grounding_dino = None
-owlv2 = None
-florence2 = None
-yolo_world = None
-florence2_seg = None
-sa2va = None
-sam2 = None
-visualizer = None
-
 try:
     from . import grounding_dino
     log_import_success("grounding_dino")
 except Exception as e:
+    grounding_dino = None
     log_import_error("grounding_dino", e)
     print(f"[ComfyUI-Grounding] Traceback:\n{traceback.format_exc()}")
 
@@ -78,6 +70,7 @@ try:
     from . import owlv2
     log_import_success("owlv2")
 except Exception as e:
+    owlv2 = None
     log_import_error("owlv2", e)
     print(f"[ComfyUI-Grounding] Traceback:\n{traceback.format_exc()}")
 
@@ -85,6 +78,7 @@ try:
     from . import florence2
     log_import_success("florence2")
 except Exception as e:
+    florence2 = None
     log_import_error("florence2", e)
     print(f"[ComfyUI-Grounding] Traceback:\n{traceback.format_exc()}")
 
@@ -92,6 +86,7 @@ try:
     from . import yolo_world
     log_import_success("yolo_world")
 except Exception as e:
+    yolo_world = None
     log_import_error("yolo_world", e)
     print(f"[ComfyUI-Grounding] Traceback:\n{traceback.format_exc()}")
 
@@ -99,6 +94,7 @@ try:
     from . import florence2_seg
     log_import_success("florence2_seg")
 except Exception as e:
+    florence2_seg = None
     log_import_error("florence2_seg", e)
     print(f"[ComfyUI-Grounding] Traceback:\n{traceback.format_exc()}")
 
@@ -106,6 +102,7 @@ try:
     from . import sa2va
     log_import_success("sa2va")
 except Exception as e:
+    sa2va = None
     log_import_error("sa2va", e)
     print(f"[ComfyUI-Grounding] Traceback:\n{traceback.format_exc()}")
 
@@ -113,6 +110,7 @@ try:
     from . import sam2
     log_import_success("sam2")
 except Exception as e:
+    sam2 = None
     log_import_error("sam2", e)
     print(f"[ComfyUI-Grounding] Traceback:\n{traceback.format_exc()}")
 
@@ -120,6 +118,7 @@ try:
     from . import visualizer
     log_import_success("visualizer")
 except Exception as e:
+    visualizer = None
     log_import_error("visualizer", e)
     print(f"[ComfyUI-Grounding] Traceback:\n{traceback.format_exc()}")
 
