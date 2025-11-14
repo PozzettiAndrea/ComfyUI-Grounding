@@ -32,20 +32,20 @@ def load_yolo_world(model_name, config):
 
     # Download if needed
     if not os.path.exists(model_path):
-        print(f"📥 Downloading {model_name}...")
+        print(f"Downloading {model_name}...")
         from torch.hub import download_url_to_file
         download_url_to_file(url, model_path, progress=True)
-        print(f"✅ Downloaded {model_name}")
+        print(f"[OK] Downloaded {model_name}")
 
     # Load model
-    print(f"📂 Loading {model_name} from {model_path}")
+    print(f"Loading {model_name} from {model_path}")
     model = YOLOWorld(model_path)
 
     # Move to device
     device = mm.get_torch_device()
     model.to(device)
 
-    print(f"✅ Successfully loaded {model_name}")
+    print(f"[OK] Successfully loaded {model_name}")
 
     return {
         "model": model,
