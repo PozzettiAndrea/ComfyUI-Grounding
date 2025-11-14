@@ -17,7 +17,7 @@ def install_requirements():
     requirements_path = os.path.join(script_dir, "requirements.txt")
 
     if not os.path.exists(requirements_path):
-        print("[ComfyUI-Grounding] ⚠️  requirements.txt not found, skipping")
+        print("[ComfyUI-Grounding] [WARNING] requirements.txt not found, skipping")
         return False
 
     try:
@@ -29,16 +29,16 @@ def install_requirements():
         )
 
         if result.returncode == 0:
-            print("[ComfyUI-Grounding] ✅ Requirements installed successfully")
+            print("[ComfyUI-Grounding] [OK] Requirements installed successfully")
             return True
         else:
-            print("[ComfyUI-Grounding] ⚠️  Requirements installation had issues")
+            print("[ComfyUI-Grounding] [WARNING] Requirements installation had issues")
             if result.stderr:
                 print(f"[ComfyUI-Grounding] Error details: {result.stderr[:500]}")
             return False
 
     except Exception as e:
-        print(f"[ComfyUI-Grounding] ⚠️  Requirements installation error: {e}")
+        print(f"[ComfyUI-Grounding] [WARNING] Requirements installation error: {e}")
         return False
 
 
@@ -81,7 +81,7 @@ def try_install_flash_attn():
     # Check if already installed
     try:
         import flash_attn
-        print("[ComfyUI-Grounding] ✅ flash_attn already installed")
+        print("[ComfyUI-Grounding] [OK] flash_attn already installed")
         return True
     except ImportError:
         pass
@@ -111,15 +111,15 @@ def try_install_flash_attn():
             )
 
             if result.returncode == 0:
-                print("[ComfyUI-Grounding] ✅ flash_attn wheel installed successfully")
+                print("[ComfyUI-Grounding] [OK] flash_attn wheel installed successfully")
                 print("[ComfyUI-Grounding] Florence-2 and SA2VA will use faster inference")
                 return True
             else:
-                print("[ComfyUI-Grounding] ⚠️  Prebuilt wheel not found or failed")
+                print("[ComfyUI-Grounding] [WARNING] Prebuilt wheel not found or failed")
                 if result.stderr:
                     print(f"[ComfyUI-Grounding] Error: {result.stderr[:300]}")
         except Exception as e:
-            print(f"[ComfyUI-Grounding] ⚠️  Wheel installation error: {e}")
+            print(f"[ComfyUI-Grounding] [WARNING] Wheel installation error: {e}")
 
     # Fall back to source compilation
     print("[ComfyUI-Grounding] Falling back to source compilation (may take 5-10 minutes)...")
@@ -133,22 +133,22 @@ def try_install_flash_attn():
         )
 
         if result.returncode == 0:
-            print("[ComfyUI-Grounding] ✅ flash_attn compiled and installed successfully")
+            print("[ComfyUI-Grounding] [OK] flash_attn compiled and installed successfully")
             print("[ComfyUI-Grounding] Florence-2 and SA2VA will use faster inference")
             return True
         else:
-            print("[ComfyUI-Grounding] ⚠️  flash_attn compilation failed")
+            print("[ComfyUI-Grounding] [WARNING] flash_attn compilation failed")
             print("[ComfyUI-Grounding] This is optional - nodes will work without it (just slower)")
             if result.stderr:
                 print(f"[ComfyUI-Grounding] Error details: {result.stderr[:500]}")
             return False
 
     except subprocess.TimeoutExpired:
-        print("[ComfyUI-Grounding] ⚠️  flash_attn compilation timed out")
+        print("[ComfyUI-Grounding] [WARNING] flash_attn compilation timed out")
         print("[ComfyUI-Grounding] Nodes will work without it (just slower)")
         return False
     except Exception as e:
-        print(f"[ComfyUI-Grounding] ⚠️  flash_attn installation error: {e}")
+        print(f"[ComfyUI-Grounding] [WARNING] flash_attn installation error: {e}")
         print("[ComfyUI-Grounding] Continuing without flash_attn (nodes will still work)")
         return False
 

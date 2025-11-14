@@ -1,4 +1,4 @@
-name: Real Model Integration Tests
+name: Linux - Integration Tests
 
 on:
   # Run on schedule (weekly, every Monday at 3 AM UTC)
@@ -13,9 +13,14 @@ on:
     branches: [main, master, dev]
 
 jobs:
-  test-real-models:
+  linux-integration:
+    name: Linux / Integration / ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     timeout-minutes: 60  # Real model tests can take longer
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+      fail-fast: false
 
     permissions:
       contents: write  # Required for GitHub Pages deployment
@@ -24,10 +29,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Python
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
-        python-version: "3.10"
+        python-version: ${{ matrix.python-version }}
         cache: 'pip'
 
     - name: Install Python dependencies
@@ -58,7 +63,7 @@ jobs:
         HF_HUB_DISABLE_TELEMETRY: 1
 
     - name: Generate test gallery
-      if: always()
+      if: always() && matrix.python-version == '3.10'
       run: |
         python tests/generate_test_gallery.py tests/test_outputs
 
@@ -74,7 +79,7 @@ jobs:
         fi
 
     - name: Upload test visual outputs
-      if: always()
+      if: always() && matrix.python-version == '3.10'
       uses: actions/upload-artifact@v4
       with:
         name: test-visual-outputs
@@ -83,7 +88,7 @@ jobs:
         if-no-files-found: ignore
 
     - name: Upload test artifacts
-      if: failure()
+      if: failure() && matrix.python-version == '3.10'
       uses: actions/upload-artifact@v4
       with:
         name: test-failures
@@ -93,7 +98,7 @@ jobs:
           *.log
 
     - name: Deploy to GitHub Pages
-      if: always()
+      if: always() && matrix.python-version == '3.10'
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -103,21 +108,21 @@ jobs:
         enable_jekyll: false
 
     - name: Checkout gh-pages branch
-      if: always()
+      if: always() && matrix.python-version == '3.10'
       uses: actions/checkout@v4
       with:
         ref: gh-pages
         path: gh-pages-content
 
     - name: Generate central index page
-      if: always()
+      if: always() && matrix.python-version == '3.10'
       run: |
         mkdir -p deploy-index
         python tests/generate_index_page.py gh-pages-content deploy-index/index.html ${{ github.repository }}
         ls -la deploy-index/
 
     - name: Deploy index page to root
-      if: always()
+      if: always() && matrix.python-version == '3.10'
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
