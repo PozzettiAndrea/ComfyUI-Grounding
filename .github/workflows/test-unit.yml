@@ -1,4 +1,4 @@
-name: Unit Tests
+name: Linux - Unit Tests
 
 on:
   push:
@@ -7,7 +7,8 @@ on:
     branches: [main, master, dev]
 
 jobs:
-  test:
+  linux-unit:
+    name: Linux / Unit / ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       matrix:

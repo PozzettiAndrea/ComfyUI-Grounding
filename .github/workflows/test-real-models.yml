@@ -1,4 +1,4 @@
-name: Real Model Integration Tests
+name: Linux - Integration Tests
 
 on:
   # Run on schedule (weekly, every Monday at 3 AM UTC)
@@ -13,9 +13,14 @@ on:
     branches: [main, master, dev]
 
 jobs:
-  test-real-models:
+  linux-integration:
+    name: Linux / Integration / ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     timeout-minutes: 60  # Real model tests can take longer
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+      fail-fast: false
 
     permissions:
       contents: write  # Required for GitHub Pages deployment
@@ -24,10 +29,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Python
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
-        python-version: "3.10"
+        python-version: ${{ matrix.python-version }}
         cache: 'pip'
 
     - name: Install Python dependencies
