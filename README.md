@@ -87,6 +87,22 @@ On first startup, example assets and workflows are auto-installed.
 **Output formats:** `list_only` (SAM2-compatible) • `dict_with_data` (with labels/scores)
 **Prompt format:** Use periods for multiple labels `"dog. cat."` • Use commas for single label `"small, brown dog"`
 
+## VRAM Management
+
+All loader nodes have a `keep_model_loaded` option (default: `True`):
+- **True**: Model stays in VRAM for fast subsequent detections (recommended for repeated use)
+- **False**: Model offloads to CPU after each detection, freeing VRAM (useful when combining with other heavy models like Flux)
+
+## Known Incompatibilities
+
+### GIMM-VFI (Frame Interpolation)
+ComfyUI-Grounding may conflict with [GIMM-VFI](https://github.com/kijai/ComfyUI-GIMM-VFI) due to:
+- **CUDA State Conflicts**: SAM2/Florence-2 modify global CUDA settings (tf32 mode)
+- **GPU Memory Competition**: PyTorch vs CuPy memory allocators
+- **Transformers Patching**: Runtime patches to transformers library
+
+**Workaround**: Uninstall GIMM-VFI if you experience import errors or crashes. These extensions cannot reliably coexist.
+
 ## Credits
 
 - [GroundingDINO](https://github.com/IDEA-Research/GroundingDINO) - IDEA-Research

@@ -42,7 +42,7 @@ except Exception as e:
 
 # Import utils
 try:
-    from .utils.cache import MODEL_CACHE
+    from .utils.cache import MODEL_CACHE, offload_model
     log_import_success("utils.cache")
 except Exception as e:
     log_import_error("utils.cache", e)
@@ -156,6 +156,12 @@ class GroundingModelLoader:
         if yolo_world is not None:
             optional_params.update(yolo_world.params.LOADER_PARAMS.get("optional", {}))
 
+        # Add keep_model_loaded to optional params
+        optional_params["keep_model_loaded"] = ("BOOLEAN", {
+            "default": True,
+            "tooltip": "Keep model in VRAM after loading. Disable to free VRAM after each detection (slower but uses less memory)"
+        })
+
         return {
             "required": {
                 "model": (list(MODEL_REGISTRY.keys()), {
@@ -170,7 +176,7 @@ class GroundingModelLoader:
     FUNCTION = "load_model"
     CATEGORY = "grounding"
 
-    def load_model(self, model):
+    def load_model(self, model, keep_model_loaded=True):
         """Load bbox detection model"""
         config = MODEL_REGISTRY[model]
         model_type = config["type"]
@@ -179,7 +185,10 @@ class GroundingModelLoader:
         cache_key = f"{model_type}_{model}"
         if cache_key in MODEL_CACHE:
             print(f"[OK] Loading {model} from cache")
-            return (MODEL_CACHE[cache_key],)
+            cached_model = MODEL_CACHE[cache_key]
+            # Update keep_model_loaded setting
+            cached_model["keep_model_loaded"] = keep_model_loaded
+            return (cached_model,)
 
         print(f"Loading {model}...")
 
@@ -202,6 +211,9 @@ class GroundingModelLoader:
             model_dict = yolo_world.load_yolo_world(model, config)
         else:
             raise ValueError(f"Unknown model type: {model_type}")
+
+        # Store keep_model_loaded setting
+        model_dict["keep_model_loaded"] = keep_model_loaded
 
         # Cache the loaded model
         MODEL_CACHE[cache_key] = model_dict
@@ -289,6 +301,7 @@ class GroundingDetector:
             torch.cuda.manual_seed_all(seed)
 
         model_type = model["type"]
+        keep_model_loaded = model.get("keep_model_loaded", True)
 
         # Masks are always generated
         output_masks = True
@@ -297,21 +310,21 @@ class GroundingDetector:
         if model_type == "grounding_dino":
             if grounding_dino is None:
                 raise RuntimeError(f"Cannot detect with {model_type}: grounding_dino module failed to import. Check console for import errors.")
-            return grounding_dino.detect_grounding_dino(
+            result = grounding_dino.detect_grounding_dino(
                 model, image, prompt, confidence_threshold, text_threshold,
                 single_box_mode, single_box_per_prompt_mode, bbox_output_format, output_masks, self._format_output
             )
         elif model_type == "owlv2":
             if owlv2 is None:
                 raise RuntimeError(f"Cannot detect with {model_type}: owlv2 module failed to import. Check console for import errors.")
-            return owlv2.detect_owlv2(
+            result = owlv2.detect_owlv2(
                 model, image, prompt, confidence_threshold,
                 single_box_mode, single_box_per_prompt_mode, bbox_output_format, output_masks, self._format_output
             )
         elif model_type == "florence2":
             if florence2 is None:
                 raise RuntimeError(f"Cannot detect with {model_type}: florence2 module failed to import. Check console for import errors.")
-            return florence2.detect_florence2(
+            result = florence2.detect_florence2(
                 model, image, prompt, confidence_threshold, single_box_mode,
                 single_box_per_prompt_mode, bbox_output_format, output_masks, florence2_max_tokens,
                 florence2_num_beams, self._format_output
@@ -319,13 +332,19 @@ class GroundingDetector:
         elif model_type == "yolo_world":
             if yolo_world is None:
                 raise RuntimeError(f"Cannot detect with {model_type}: yolo_world module failed to import. Check console for import errors.")
-            return yolo_world.detect_yolo_world(
+            result = yolo_world.detect_yolo_world(
                 model, image, prompt, confidence_threshold, single_box_mode,
                 single_box_per_prompt_mode, bbox_output_format, output_masks, yolo_iou, yolo_agnostic_nms,
                 yolo_max_det, self._format_output
             )
         else:
             raise ValueError(f"Unknown model type: {model_type}")
+
+        # Offload model from VRAM if keep_model_loaded is False
+        if not keep_model_loaded:
+            offload_model(model)
+
+        return result
 
     def _format_output(self, all_boxes, all_labels, all_scores, annotated_images,
                        image_shape, bbox_output_format, output_masks):
@@ -380,6 +399,12 @@ class GroundingMaskModelLoader:
         if sa2va is not None:
             optional_params.update(sa2va.params.LOADER_PARAMS.get("optional", {}))
 
+        # Add keep_model_loaded to optional params
+        optional_params["keep_model_loaded"] = ("BOOLEAN", {
+            "default": True,
+            "tooltip": "Keep model in VRAM after loading. Disable to free VRAM after each detection (slower but uses less memory)"
+        })
+
         return {
             "required": {
                 "model": (list(MASK_MODEL_REGISTRY.keys()), {
@@ -394,7 +419,7 @@ class GroundingMaskModelLoader:
     FUNCTION = "load_model"
     CATEGORY = "grounding"
 
-    def load_model(self, model, sa2va_dtype="auto"):
+    def load_model(self, model, sa2va_dtype="auto", keep_model_loaded=True):
         """Load mask generation model"""
         config = MASK_MODEL_REGISTRY[model]
         model_type = config["type"]
@@ -403,7 +428,10 @@ class GroundingMaskModelLoader:
         cache_key = f"{model_type}_{model}_dtype_{sa2va_dtype}"
         if cache_key in MODEL_CACHE:
             print(f"[OK] Loading {model} from cache")
-            return (MODEL_CACHE[cache_key],)
+            cached_model = MODEL_CACHE[cache_key]
+            # Update keep_model_loaded setting
+            cached_model["keep_model_loaded"] = keep_model_loaded
+            return (cached_model,)
 
         print(f"Loading {model}...")
 
@@ -422,6 +450,9 @@ class GroundingMaskModelLoader:
             raise NotImplementedError("PSALM support coming soon")
         else:
             raise ValueError(f"Unknown model type: {model_type}")
+
+        # Store keep_model_loaded setting
+        model_dict["keep_model_loaded"] = keep_model_loaded
 
         # Cache the loaded model
         MODEL_CACHE[cache_key] = model_dict
@@ -514,12 +545,13 @@ class GroundingMaskDetector:
             torch.cuda.manual_seed_all(seed)
 
         model_type = model["type"]
+        keep_model_loaded = model.get("keep_model_loaded", True)
 
         # Route to appropriate detection method
         if model_type == "florence2_seg":
             if florence2_seg is None:
                 raise RuntimeError(f"Cannot detect with {model_type}: florence2_seg module failed to import. Check console for import errors.")
-            return florence2_seg.detect_florence2_seg(
+            result = florence2_seg.detect_florence2_seg(
                 model, image, prompt, confidence_threshold,
                 florence2_max_tokens, florence2_num_beams,
                 self._format_output
@@ -527,7 +559,7 @@ class GroundingMaskDetector:
         elif model_type == "sa2va":
             if sa2va is None:
                 raise RuntimeError(f"Cannot detect with {model_type}: sa2va module failed to import. Check console for import errors.")
-            return sa2va.detect_sa2va(
+            result = sa2va.detect_sa2va(
                 model, image, prompt, confidence_threshold,
                 sa2va_max_tokens, sa2va_num_beams, self._format_output
             )
@@ -537,6 +569,12 @@ class GroundingMaskDetector:
             raise NotImplementedError("PSALM support coming soon")
         else:
             raise ValueError(f"Unknown model type: {model_type}")
+
+        # Offload model from VRAM if keep_model_loaded is False
+        if not keep_model_loaded:
+            offload_model(model)
+
+        return result
 
     def _format_output(self, masks, bboxes, labels_list, annotated_images, text):
         """Format mask detection output
