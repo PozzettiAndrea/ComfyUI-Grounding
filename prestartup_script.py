@@ -127,66 +127,16 @@ def copy_assets():
         print(f"[ComfyUI-Grounding] Traceback: {traceback.format_exc()}")
         return False
 
-
-def copy_workflows():
-    """Copy example workflows to ComfyUI user workflows directory"""
-    node_dir = get_node_dir()
-    workflows_src = os.path.join(node_dir, "workflows")
-
-    if not os.path.exists(workflows_src):
-        print("[ComfyUI-Grounding] Warning: workflows folder not found")
-        return False
-
-    # Get ComfyUI user workflows directory
-    user_dir = folder_paths.get_user_directory()
-    workflows_dst = os.path.join(user_dir, "default", "workflows")
-
-    try:
-        # Create destination directory if it doesn't exist
-        os.makedirs(workflows_dst, exist_ok=True)
-
-        # Copy all workflow JSON files
-        copied_count = 0
-        for filename in os.listdir(workflows_src):
-            if not filename.endswith('.json'):
-                continue
-
-            src_path = os.path.join(workflows_src, filename)
-            # Prefix workflow names to avoid conflicts
-            dst_filename = f"ComfyUI-Grounding_{filename}"
-            dst_path = os.path.join(workflows_dst, dst_filename)
-
-            # Skip if file already exists (don't overwrite user workflows)
-            if os.path.exists(dst_path):
-                continue
-
-            shutil.copy2(src_path, dst_path)
-            copied_count += 1
-            print(f"[ComfyUI-Grounding] Copied workflow: {dst_filename}")
-
-        if copied_count > 0:
-            print(f"[ComfyUI-Grounding] [OK] Copied {copied_count} workflows to {workflows_dst}")
-        else:
-            print(f"[ComfyUI-Grounding] All workflows already exist in {workflows_dst}")
-
-        return True
-
-    except Exception as e:
-        print(f"[ComfyUI-Grounding] [ERROR] Error copying workflows: {e}")
-        return False
-
-
 def main():
     """Main initialization function"""
     print("[ComfyUI-Grounding] PreStartup Script Running...")
 
-    # Copy assets and workflows (skips files that already exist)
-    print("[ComfyUI-Grounding] Checking assets and workflows...")
+    # Copy assets (skips files that already exist)
+    print("[ComfyUI-Grounding] Checking assets...")
     assets_ok = copy_assets()
-    workflows_ok = copy_workflows()
 
     # Report completion status
-    if assets_ok and workflows_ok:
+    if assets_ok:
         print("[ComfyUI-Grounding] [OK] PreStartup initialization complete")
     else:
         print("[ComfyUI-Grounding] [WARNING] PreStartup completed with some warnings")
