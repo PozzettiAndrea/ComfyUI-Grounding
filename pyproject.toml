@@ -38,5 +38,5 @@ Documentation = "https://github.com/PozzettiAndrea/ComfyUI-Grounding/wiki"
 # Comfy Registry configuration
 [tool.comfy]
 PublisherId = "pznodes"
-DisplayName = "ComfyUI-Grounding"
+DisplayName = "Grounding"
 Icon = ""
