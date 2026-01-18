@@ -6,29 +6,7 @@ license = {file = "LICENSE"}
 requires-python = ">=3.10"
 
 # Core dependencies for ComfyUI-Grounding
-dependencies = [
-    # For GroundingDINO, MM-GroundingDINO, and OWLv2 (HuggingFace transformers)
-    "transformers>=4.30.0",
-    "timm>=0.9.0",
-
-    # For YOLO-World
-    "ultralytics>=8.2.0",
-
-    # For model downloads and SAM2
-    "hf_transfer",
-    "huggingface_hub>=0.20.0",
-
-    # For fine-tuning
-    "peft",
-
-    # Configuration and utilities
-    "pyyaml>=6.0",
-    "tqdm>=4.65.0",
-
-    # Core PyTorch (usually already installed with ComfyUI)
-    "torch>=2.0.0",
-    "torchvision",
-]
+dynamic = ["dependencies"]
 
 [project.urls]
 Repository = "https://github.com/PozzettiAndrea/ComfyUI-Grounding"
@@ -36,6 +14,13 @@ Documentation = "https://github.com/PozzettiAndrea/ComfyUI-Grounding/wiki"
 "Bug Tracker" = "https://github.com/PozzettiAndrea/ComfyUI-Grounding/issues"
 
 # Comfy Registry configuration
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
 [tool.comfy]
 PublisherId = "pznodes"
 DisplayName = "ComfyUI-Grounding"
