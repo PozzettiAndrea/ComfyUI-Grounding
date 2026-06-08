@@ -12,6 +12,8 @@ from torch import nn
 from ....sam2.modeling.position_encoding import PositionEmbeddingRandom
 
 from ....sam2.modeling.sam2_utils import LayerNorm2d
+import comfy.ops
+ops = comfy.ops.disable_weight_init
 
 
 class PromptEncoder(nn.Module):
@@ -45,25 +47,25 @@ class PromptEncoder(nn.Module):
 
         self.num_point_embeddings: int = 4  # pos/neg point + 2 box corners
         point_embeddings = [
-            nn.Embedding(1, embed_dim) for i in range(self.num_point_embeddings)
+            ops.Embedding(1, embed_dim) for i in range(self.num_point_embeddings)
         ]
         self.point_embeddings = nn.ModuleList(point_embeddings)
-        self.not_a_point_embed = nn.Embedding(1, embed_dim)
+        self.not_a_point_embed = ops.Embedding(1, embed_dim)
 
         self.mask_input_size = (
             4 * image_embedding_size[0],
             4 * image_embedding_size[1],
         )
         self.mask_downscaling = nn.Sequential(
-            nn.Conv2d(1, mask_in_chans // 4, kernel_size=2, stride=2),
+            ops.Conv2d(1, mask_in_chans // 4, kernel_size=2, stride=2),
             LayerNorm2d(mask_in_chans // 4),
             activation(),
-            nn.Conv2d(mask_in_chans // 4, mask_in_chans, kernel_size=2, stride=2),
+            ops.Conv2d(mask_in_chans // 4, mask_in_chans, kernel_size=2, stride=2),
             LayerNorm2d(mask_in_chans),
             activation(),
-            nn.Conv2d(mask_in_chans, embed_dim, kernel_size=1),
+            ops.Conv2d(mask_in_chans, embed_dim, kernel_size=1),
         )
-        self.no_mask_embed = nn.Embedding(1, embed_dim)
+        self.no_mask_embed = ops.Embedding(1, embed_dim)
 
     def get_dense_pe(self) -> torch.Tensor:
         """

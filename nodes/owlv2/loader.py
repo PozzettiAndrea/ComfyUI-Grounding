@@ -23,8 +23,8 @@ def load_owlv2(model_name, config):
     cache_dir = os.path.join(folder_paths.models_dir, "grounding")
     os.makedirs(cache_dir, exist_ok=True)
 
-    print(f"📦 Loading OWLv2 Model: {model_name}")
-    print(f"⚙️  Using attention implementation: eager (only supported option)")
+    print(f"Loading OWLv2 Model: {model_name}")
+    print(f"Using attention implementation: eager (only supported option)")
 
     processor = Owlv2Processor.from_pretrained(hf_id, cache_dir=cache_dir)
     model = Owlv2ForObjectDetection.from_pretrained(hf_id, cache_dir=cache_dir)
@@ -32,7 +32,7 @@ def load_owlv2(model_name, config):
     model.to(device)
     model.eval()
 
-    print(f"✅ Successfully loaded {model_name}")
+    print(f"Successfully loaded {model_name}")
 
     return {
         "model": model,

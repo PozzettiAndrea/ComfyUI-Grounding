@@ -12,6 +12,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from ...sam2.modeling.sam2_utils import DropPath, get_clones, LayerNorm2d
+import comfy.ops
+ops = comfy.ops.disable_weight_init
 
 
 class MaskDownSampler(nn.Module):
@@ -40,7 +42,7 @@ class MaskDownSampler(nn.Module):
         for _ in range(num_layers):
             mask_out_chans = mask_in_chans * (stride**2)
             self.encoder.append(
-                nn.Conv2d(
+                ops.Conv2d(
                     mask_in_chans,
                     mask_out_chans,
                     kernel_size=kernel_size,
@@ -52,7 +54,7 @@ class MaskDownSampler(nn.Module):
             self.encoder.append(activation())
             mask_in_chans = mask_out_chans
 
-        self.encoder.append(nn.Conv2d(mask_out_chans, embed_dim, kernel_size=1))
+        self.encoder.append(ops.Conv2d(mask_out_chans, embed_dim, kernel_size=1))
 
     def forward(self, x):
         return self.encoder(x)
@@ -81,7 +83,7 @@ class CXBlock(nn.Module):
         use_dwconv=True,
     ):
         super().__init__()
-        self.dwconv = nn.Conv2d(
+        self.dwconv = ops.Conv2d(
             dim,
             dim,
             kernel_size=kernel_size,
@@ -89,11 +91,11 @@ class CXBlock(nn.Module):
             groups=dim if use_dwconv else 1,
         )  # depthwise conv
         self.norm = LayerNorm2d(dim, eps=1e-6)
-        self.pwconv1 = nn.Linear(
+        self.pwconv1 = ops.Linear(
             dim, 4 * dim
         )  # pointwise/1x1 convs, implemented with linear layers
         self.act = nn.GELU()
-        self.pwconv2 = nn.Linear(4 * dim, dim)
+        self.pwconv2 = ops.Linear(4 * dim, dim)
         self.gamma = (
             nn.Parameter(layer_scale_init_value * torch.ones((dim)), requires_grad=True)
             if layer_scale_init_value > 0
@@ -125,7 +127,7 @@ class Fuser(nn.Module):
 
         if input_projection:
             assert dim is not None
-            self.proj = nn.Conv2d(dim, dim, kernel_size=1)
+            self.proj = ops.Conv2d(dim, dim, kernel_size=1)
 
     def forward(self, x):
         # normally x: (N, C, H, W)
@@ -148,12 +150,12 @@ class MemoryEncoder(nn.Module):
 
         self.mask_downsampler = mask_downsampler
 
-        self.pix_feat_proj = nn.Conv2d(in_dim, in_dim, kernel_size=1)
+        self.pix_feat_proj = ops.Conv2d(in_dim, in_dim, kernel_size=1)
         self.fuser = fuser
         self.position_encoding = position_encoding
         self.out_proj = nn.Identity()
         if out_dim != in_dim:
-            self.out_proj = nn.Conv2d(in_dim, out_dim, kernel_size=1)
+            self.out_proj = ops.Conv2d(in_dim, out_dim, kernel_size=1)
 
     def forward(
         self,

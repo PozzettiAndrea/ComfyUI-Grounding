@@ -12,6 +12,8 @@ from torch import nn, Tensor
 from ...sam2.modeling.sam.transformer import RoPEAttention
 
 from ...sam2.modeling.sam2_utils import get_activation_fn, get_clones
+import comfy.ops
+ops = comfy.ops.disable_weight_init
 
 
 class MemoryAttentionLayer(nn.Module):
@@ -36,13 +38,13 @@ class MemoryAttentionLayer(nn.Module):
         self.cross_attn_image = cross_attention
 
         # Implementation of Feedforward model
-        self.linear1 = nn.Linear(d_model, dim_feedforward)
+        self.linear1 = ops.Linear(d_model, dim_feedforward)
         self.dropout = nn.Dropout(dropout)
-        self.linear2 = nn.Linear(dim_feedforward, d_model)
+        self.linear2 = ops.Linear(dim_feedforward, d_model)
 
-        self.norm1 = nn.LayerNorm(d_model)
-        self.norm2 = nn.LayerNorm(d_model)
-        self.norm3 = nn.LayerNorm(d_model)
+        self.norm1 = ops.LayerNorm(d_model)
+        self.norm2 = ops.LayerNorm(d_model)
+        self.norm3 = ops.LayerNorm(d_model)
         self.dropout1 = nn.Dropout(dropout)
         self.dropout2 = nn.Dropout(dropout)
         self.dropout3 = nn.Dropout(dropout)
@@ -112,7 +114,7 @@ class MemoryAttention(nn.Module):
         self.d_model = d_model
         self.layers = get_clones(layer, num_layers)
         self.num_layers = num_layers
-        self.norm = nn.LayerNorm(d_model)
+        self.norm = ops.LayerNorm(d_model)
         self.pos_enc_at_input = pos_enc_at_input
         self.batch_first = batch_first
 

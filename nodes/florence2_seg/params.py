@@ -16,14 +16,14 @@ DETECTOR_PARAMS = {
             "min": 1,
             "max": 4096,
             "step": 1,
-            "tooltip": "🌸 Florence-2 ONLY! Max tokens for generation. Typical: 512 (fast), 1024 (balanced), 2048+ (complex scenes)"
+            "tooltip": "Florence-2 ONLY! Max tokens for generation. Typical: 512 (fast), 1024 (balanced), 2048+ (complex scenes)"
         }),
         "florence2_num_beams": ("INT", {
             "default": 3,
             "min": 1,
             "max": 10,
             "step": 1,
-            "tooltip": "🌸 Florence-2 ONLY! Beam search width. 1 (greedy/fastest), 3 (balanced/default), 5+ (better quality, slower)"
+            "tooltip": "Florence-2 ONLY! Beam search width. 1 (greedy/fastest), 3 (balanced/default), 5+ (better quality, slower)"
         }),
     }
 }

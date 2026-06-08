@@ -14,6 +14,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from ..utils.misc import mask_to_box
+import comfy.ops
+ops = comfy.ops.disable_weight_init
 
 
 def select_closest_cond_frames(frame_idx, cond_frame_outputs, max_cond_frame_num):
@@ -123,7 +125,7 @@ class MLP(nn.Module):
         self.num_layers = num_layers
         h = [hidden_dim] * (num_layers - 1)
         self.layers = nn.ModuleList(
-            nn.Linear(n, k) for n, k in zip([input_dim] + h, h + [output_dim])
+            ops.Linear(n, k) for n, k in zip([input_dim] + h, h + [output_dim])
         )
         self.sigmoid_output = sigmoid_output
         self.act = activation()

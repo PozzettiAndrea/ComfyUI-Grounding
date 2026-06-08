@@ -44,7 +44,7 @@ def load_florence2_seg(model_name, config):
     cache_dir = os.path.join(folder_paths.models_dir, "llm")
     os.makedirs(cache_dir, exist_ok=True)
 
-    print(f"📦 Loading Florence-2 Segmentation Model: {model_name}")
+    print(f"Loading Florence-2 Segmentation Model: {model_name}")
 
     # Processor needs trust_remote_code for custom attributes like image_token
     processor = AutoProcessor.from_pretrained(
@@ -66,7 +66,7 @@ def load_florence2_seg(model_name, config):
     model.to(device)
     model.eval()
 
-    print(f"✅ Successfully loaded {model_name}")
+    print(f"Successfully loaded {model_name}")
 
     return {
         "model": model,

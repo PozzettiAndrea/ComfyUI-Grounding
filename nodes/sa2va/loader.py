@@ -27,8 +27,8 @@ def load_sa2va(model_name, config, sa2va_dtype="auto"):
     cache_dir = os.path.join(folder_paths.models_dir, "sa2va")
     os.makedirs(cache_dir, exist_ok=True)
 
-    print(f"📦 Loading SA2VA Model: {model_name}")
-    print(f"🎨 Using SA2VA dtype: {sa2va_dtype}")
+    print(f"Loading SA2VA Model: {model_name}")
+    print(f"Using SA2VA dtype: {sa2va_dtype}")
 
     # Map dtype string to torch dtype
     dtype_map = {
@@ -39,9 +39,9 @@ def load_sa2va(model_name, config, sa2va_dtype="auto"):
     }
     torch_dtype = dtype_map.get(sa2va_dtype, "auto")
 
-    print(f"📥 Loading model from HuggingFace ({hf_id})...")
-    print(f"📂 Cache directory: {cache_dir}")
-    print(f"⚠️  IMPORTANT: trust_remote_code=True is required for SA2VA")
+    print(f"Loading model from HuggingFace ({hf_id})...")
+    print(f"Cache directory: {cache_dir}")
+    print(f"IMPORTANT: trust_remote_code=True is required for SA2VA")
 
     # Load model
     model = AutoModelForCausalLM.from_pretrained(
@@ -61,7 +61,7 @@ def load_sa2va(model_name, config, sa2va_dtype="auto"):
 
     model.eval()
 
-    print(f"✅ Successfully loaded {model_name}")
+    print(f"Successfully loaded {model_name}")
 
     return {
         "model": model,

@@ -23,8 +23,8 @@ def load_grounding_dino(model_name, config):
     cache_dir = os.path.join(folder_paths.models_dir, "grounding")
     os.makedirs(cache_dir, exist_ok=True)
 
-    print(f"📦 Loading GroundingDINO Model: {model_name}")
-    print(f"⚙️  Using attention implementation: eager (only supported option)")
+    print(f"Loading GroundingDINO Model: {model_name}")
+    print(f"Using attention implementation: eager (only supported option)")
 
     processor = AutoProcessor.from_pretrained(hf_id, cache_dir=cache_dir)
     model = AutoModelForZeroShotObjectDetection.from_pretrained(
@@ -36,7 +36,7 @@ def load_grounding_dino(model_name, config):
     model.to(device)
     model.eval()
 
-    print(f"✅ Successfully loaded {model_name}")
+    print(f"Successfully loaded {model_name}")
 
     return {
         "model": model,

@@ -6,6 +6,7 @@ import torch
 import numpy as np
 import torch.nn.functional as F
 from contextlib import nullcontext
+from torch.amp import autocast
 from tqdm import tqdm
 import comfy.model_management as mm
 from comfy.utils import ProgressBar, common_upscale
@@ -150,7 +151,7 @@ def segment_sam2(image, sam2_model, keep_model_loaded, coordinates_positive=None
         model.max_sprinkle_area = max_sprinkle_area
 
     autocast_condition = not mm.is_device_mps(device)
-    with torch.autocast(mm.get_autocast_device(device), dtype=dtype) if autocast_condition else nullcontext():
+    with autocast(mm.get_autocast_device(device), dtype=dtype) if autocast_condition else nullcontext():
         if segmentor == 'single_image':
             image_np = (image.contiguous() * 255).byte().numpy()
             comfy_pbar = ProgressBar(len(image_np))

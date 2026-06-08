@@ -16,14 +16,14 @@ DETECTOR_PARAMS = {
             "min": 1,
             "max": 4096,
             "step": 1,
-            "tooltip": "🌸 Florence-2 ONLY! Max tokens for generation"
+            "tooltip": "Florence-2 ONLY! Max tokens for generation"
         }),
         "florence2_num_beams": ("INT", {
             "default": 3,
             "min": 1,
             "max": 10,
             "step": 1,
-            "tooltip": "🌸 Florence-2 ONLY! Beam search width"
+            "tooltip": "Florence-2 ONLY! Beam search width"
         }),
     }
 }

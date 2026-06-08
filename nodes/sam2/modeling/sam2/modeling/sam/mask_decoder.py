@@ -10,6 +10,8 @@ import torch
 from torch import nn
 
 from ....sam2.modeling.sam2_utils import LayerNorm2d, MLP
+import comfy.ops
+ops = comfy.ops.disable_weight_init
 
 
 class MaskDecoder(nn.Module):
@@ -53,32 +55,32 @@ class MaskDecoder(nn.Module):
 
         self.num_multimask_outputs = num_multimask_outputs
 
-        self.iou_token = nn.Embedding(1, transformer_dim)
+        self.iou_token = ops.Embedding(1, transformer_dim)
         self.num_mask_tokens = num_multimask_outputs + 1
-        self.mask_tokens = nn.Embedding(self.num_mask_tokens, transformer_dim)
+        self.mask_tokens = ops.Embedding(self.num_mask_tokens, transformer_dim)
 
         self.pred_obj_scores = pred_obj_scores
         if self.pred_obj_scores:
-            self.obj_score_token = nn.Embedding(1, transformer_dim)
+            self.obj_score_token = ops.Embedding(1, transformer_dim)
         self.use_multimask_token_for_obj_ptr = use_multimask_token_for_obj_ptr
 
         self.output_upscaling = nn.Sequential(
-            nn.ConvTranspose2d(
+            ops.ConvTranspose2d(
                 transformer_dim, transformer_dim // 4, kernel_size=2, stride=2
             ),
             LayerNorm2d(transformer_dim // 4),
             activation(),
-            nn.ConvTranspose2d(
+            ops.ConvTranspose2d(
                 transformer_dim // 4, transformer_dim // 8, kernel_size=2, stride=2
             ),
             activation(),
         )
         self.use_high_res_features = use_high_res_features
         if use_high_res_features:
-            self.conv_s0 = nn.Conv2d(
+            self.conv_s0 = ops.Conv2d(
                 transformer_dim, transformer_dim // 8, kernel_size=1, stride=1
             )
-            self.conv_s1 = nn.Conv2d(
+            self.conv_s1 = ops.Conv2d(
                 transformer_dim, transformer_dim // 4, kernel_size=1, stride=1
             )
 
@@ -97,7 +99,7 @@ class MaskDecoder(nn.Module):
             sigmoid_output=iou_prediction_use_sigmoid,
         )
         if self.pred_obj_scores:
-            self.pred_obj_score_head = nn.Linear(transformer_dim, 1)
+            self.pred_obj_score_head = ops.Linear(transformer_dim, 1)
             if pred_obj_scores_mlp:
                 self.pred_obj_score_head = MLP(transformer_dim, transformer_dim, 1, 3)
 

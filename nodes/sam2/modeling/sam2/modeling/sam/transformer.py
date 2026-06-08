@@ -17,6 +17,8 @@ from ....sam2.modeling.position_encoding import apply_rotary_enc, compute_axial_
 from ....sam2.modeling.sam2_utils import MLP
 
 from ....sam2.utils.misc import get_sdpa_settings
+import comfy.ops
+ops = comfy.ops.disable_weight_init
 OLD_GPU, USE_FLASH_ATTN, MATH_KERNEL_ON = get_sdpa_settings()
 
 try:
@@ -78,7 +80,7 @@ class TwoWayTransformer(nn.Module):
         self.final_attn_token_to_image = Attention(
             embedding_dim, num_heads, downsample_rate=attention_downsample_rate
         )
-        self.norm_final_attn = nn.LayerNorm(embedding_dim)
+        self.norm_final_attn = ops.LayerNorm(embedding_dim)
 
     def forward(
         self,
@@ -152,19 +154,19 @@ class TwoWayAttentionBlock(nn.Module):
         """
         super().__init__()
         self.self_attn = Attention(embedding_dim, num_heads)
-        self.norm1 = nn.LayerNorm(embedding_dim)
+        self.norm1 = ops.LayerNorm(embedding_dim)
 
         self.cross_attn_token_to_image = Attention(
             embedding_dim, num_heads, downsample_rate=attention_downsample_rate
         )
-        self.norm2 = nn.LayerNorm(embedding_dim)
+        self.norm2 = ops.LayerNorm(embedding_dim)
 
         self.mlp = MLP(
             embedding_dim, mlp_dim, embedding_dim, num_layers=2, activation=activation
         )
-        self.norm3 = nn.LayerNorm(embedding_dim)
+        self.norm3 = ops.LayerNorm(embedding_dim)
 
-        self.norm4 = nn.LayerNorm(embedding_dim)
+        self.norm4 = ops.LayerNorm(embedding_dim)
         self.cross_attn_image_to_token = Attention(
             embedding_dim, num_heads, downsample_rate=attention_downsample_rate
         )
@@ -228,10 +230,10 @@ class Attention(nn.Module):
             self.internal_dim % num_heads == 0
         ), "num_heads must divide embedding_dim."
 
-        self.q_proj = nn.Linear(embedding_dim, self.internal_dim)
-        self.k_proj = nn.Linear(self.kv_in_dim, self.internal_dim)
-        self.v_proj = nn.Linear(self.kv_in_dim, self.internal_dim)
-        self.out_proj = nn.Linear(self.internal_dim, embedding_dim)
+        self.q_proj = ops.Linear(embedding_dim, self.internal_dim)
+        self.k_proj = ops.Linear(self.kv_in_dim, self.internal_dim)
+        self.v_proj = ops.Linear(self.kv_in_dim, self.internal_dim)
+        self.out_proj = ops.Linear(self.internal_dim, embedding_dim)
 
         self.dropout_p = dropout
 

@@ -19,6 +19,8 @@ from ....sam2.modeling.backbones.utils import (
 )
 
 from ....sam2.modeling.sam2_utils import DropPath, MLP
+import comfy.ops
+ops = comfy.ops.disable_weight_init
 
 
 def do_pool(x: torch.Tensor, pool: nn.Module, norm: nn.Module = None) -> torch.Tensor:
@@ -49,8 +51,8 @@ class MultiScaleAttention(nn.Module):
         self.dim_out = dim_out
         self.num_heads = num_heads
         self.q_pool = q_pool
-        self.qkv = nn.Linear(dim, dim_out * 3)
-        self.proj = nn.Linear(dim_out, dim_out)
+        self.qkv = ops.Linear(dim, dim_out * 3)
+        self.proj = ops.Linear(dim_out, dim_out)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         B, H, W, _ = x.shape
@@ -128,7 +130,7 @@ class MultiScaleBlock(nn.Module):
         )
 
         if dim != dim_out:
-            self.proj = nn.Linear(dim, dim_out)
+            self.proj = ops.Linear(dim, dim_out)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         shortcut = x  # B, H, W, C

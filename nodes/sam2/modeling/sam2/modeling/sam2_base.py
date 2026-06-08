@@ -14,6 +14,8 @@ from ...sam2.modeling.sam.mask_decoder import MaskDecoder
 from ...sam2.modeling.sam.prompt_encoder import PromptEncoder
 from ...sam2.modeling.sam.transformer import TwoWayTransformer
 from ...sam2.modeling.sam2_utils import get_1d_sine_pe, MLP, select_closest_cond_frames
+import comfy.ops
+ops = comfy.ops.disable_weight_init
 
 # a large negative value as a placeholder score for missing objects
 NO_OBJ_SCORE = -1024.0
@@ -107,7 +109,7 @@ class SAM2Base(torch.nn.Module):
             # A conv layer to downsample the mask prompt to stride 4 (the same stride as
             # low-res SAM mask logits) and to change its scales from 0~1 to SAM logit scale,
             # so that it can be fed into the SAM mask decoder to generate a pointer.
-            self.mask_downsample = torch.nn.Conv2d(1, 1, kernel_size=4, stride=4)
+            self.mask_downsample = ops.Conv2d(1, 1, kernel_size=4, stride=4)
         self.add_tpos_enc_to_obj_ptrs = add_tpos_enc_to_obj_ptrs
         if proj_tpos_enc_in_obj_ptrs:
             assert add_tpos_enc_to_obj_ptrs  # these options need to be used together
@@ -240,7 +242,7 @@ class SAM2Base(torch.nn.Module):
         )
         if self.use_obj_ptrs_in_encoder:
             # a linear projection on SAM output tokens to turn them into object pointers
-            self.obj_ptr_proj = torch.nn.Linear(self.hidden_dim, self.hidden_dim)
+            self.obj_ptr_proj = ops.Linear(self.hidden_dim, self.hidden_dim)
             if self.use_mlp_for_obj_ptr_proj:
                 self.obj_ptr_proj = MLP(
                     self.hidden_dim, self.hidden_dim, self.hidden_dim, 3
@@ -250,7 +252,7 @@ class SAM2Base(torch.nn.Module):
         if self.proj_tpos_enc_in_obj_ptrs:
             # a linear projection on temporal positional encoding in object pointers to
             # avoid potential interference with spatial positional encoding
-            self.obj_ptr_tpos_proj = torch.nn.Linear(self.hidden_dim, self.mem_dim)
+            self.obj_ptr_tpos_proj = ops.Linear(self.hidden_dim, self.mem_dim)
         else:
             self.obj_ptr_tpos_proj = torch.nn.Identity()
 

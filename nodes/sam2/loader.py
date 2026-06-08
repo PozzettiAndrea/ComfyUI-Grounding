@@ -39,7 +39,7 @@ def load_sam2(model, segmentor, device, precision, script_directory):
 
     # Check cache
     if cache_key in MODEL_CACHE:
-        print(f"✅ Loading SAM2 model from cache")
+        print(f"Loading SAM2 model from cache")
         return MODEL_CACHE[cache_key]
 
     download_path = os.path.join(folder_paths.models_dir, "sam2")
@@ -92,6 +92,6 @@ def load_sam2(model, segmentor, device, precision, script_directory):
 
     # Cache the loaded model
     MODEL_CACHE[cache_key] = sam2_model
-    print(f"💾 Cached SAM2 model in memory")
+    print(f"Cached SAM2 model in memory")
 
     return sam2_model

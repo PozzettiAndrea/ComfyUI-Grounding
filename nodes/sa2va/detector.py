@@ -52,7 +52,7 @@ def detect_sa2va(model_dict, image, prompt, confidence_threshold,
         else:
             sa2va_prompt = prompt
 
-        print(f"🎨 SA2VA inference with prompt: {sa2va_prompt}")
+        print(f"SA2VA inference with prompt: {sa2va_prompt}")
 
         # Run inference using SA2VA's predict_forward method
         result = model.predict_forward(
@@ -69,8 +69,8 @@ def detect_sa2va(model_dict, image, prompt, confidence_threshold,
         prediction_text = result.get('prediction', '')
         prediction_masks = result.get('prediction_masks', [])
 
-        print(f"📝 SA2VA prediction: {prediction_text}")
-        print(f"🎭 SA2VA generated {len(prediction_masks)} mask(s)")
+        print(f"SA2VA prediction: {prediction_text}")
+        print(f"SA2VA generated {len(prediction_masks)} mask(s)")
 
         # Store the prediction text
         all_texts.append(prediction_text)
@@ -78,9 +78,9 @@ def detect_sa2va(model_dict, image, prompt, confidence_threshold,
         # Check if [SEG] token was generated
         seg_count = prediction_text.count('[SEG]')
         if seg_count == 0:
-            print("⚠️  WARNING: SA2VA did not generate any [SEG] tokens!")
-            print("💡 TIP: Try prompts like 'Segment the person' or 'Please segment all objects in the image'")
-            print("💡 SA2VA needs explicit segmentation instructions, not just object descriptions")
+            print("WARNING: SA2VA did not generate any [SEG] tokens!")
+            print("TIP: Try prompts like 'Segment the person' or 'Please segment all objects in the image'")
+            print("SA2VA needs explicit segmentation instructions, not just object descriptions")
 
         if prediction_masks and len(prediction_masks) > 0:
             for mask_idx, mask in enumerate(prediction_masks):
@@ -103,20 +103,20 @@ def detect_sa2va(model_dict, image, prompt, confidence_threshold,
                         mask = mask.reshape(h, w)
                         print(f"  Mask {mask_idx}: Reshaped from 1D to ({h}, {w})")
                     else:
-                        print(f"  ⚠️ WARNING: 1D mask size {mask.shape[0]} doesn't match image size {h}x{w}, skipping")
+                        print(f"  WARNING: 1D mask size {mask.shape[0]} doesn't match image size {h}x{w}, skipping")
                         continue
                 elif mask.ndim > 2:
                     # Squeeze extra dimensions but ensure we keep 2D
                     while mask.ndim > 2 and (mask.shape[0] == 1 or mask.shape[-1] == 1):
                         mask = mask.squeeze()
                     if mask.ndim != 2:
-                        print(f"  ⚠️ WARNING: Cannot reduce mask to 2D, shape is {mask.shape}, skipping")
+                        print(f"  WARNING: Cannot reduce mask to 2D, shape is {mask.shape}, skipping")
                         continue
 
                 # Verify mask shape matches image
                 h, w = image_np.shape[:2]
                 if mask.shape != (h, w):
-                    print(f"  ⚠️ WARNING: Mask shape {mask.shape} doesn't match image shape ({h}, {w})")
+                    print(f"  WARNING: Mask shape {mask.shape} doesn't match image shape ({h}, {w})")
                     # Try to resize mask to match image using torch
                     mask_tensor = torch.from_numpy(mask).unsqueeze(0).unsqueeze(0).float()
                     mask_tensor = torch.nn.functional.interpolate(
