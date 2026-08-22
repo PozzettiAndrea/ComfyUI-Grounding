@@ -10,4 +10,5 @@ Repository = "https://github.com/PozzettiAndrea/ComfyUI-Grounding"
 [tool.comfy]
 PublisherId = "pznodes"
 DisplayName = "Grounding"
+web = "javascript"
 Icon = "https://raw.githubusercontent.com/PozzettiAndrea/ComfyUI-Grounding/main/assets/icon.png"

@@ -120,7 +120,7 @@ function showWidget(node, widget) {
 
 // Main extension registration
 app.registerExtension({
-    name: "comfyui.grounding.dynamic_parameters",
+    name: "grounding.dynamic_parameters",
 
     async nodeCreated(node) {
         // Handle GroundingModelLoader node
